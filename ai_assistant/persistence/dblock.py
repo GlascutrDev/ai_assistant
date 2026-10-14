@@ -20,6 +20,19 @@ def bind_turn():
 
 
 @contextmanager
+def bound():
+	"""Bind the job's frappe.local in this thread without taking the lock (for a whole graph run)."""
+	if _contextvar.get(None) is not None or _state["local"] is None:
+		yield
+		return
+	token = _contextvar.set(_state["local"])
+	try:
+		yield
+	finally:
+		_contextvar.reset(token)
+
+
+@contextmanager
 def locked():
 	with LOCK:
 		current = _contextvar.get(None)

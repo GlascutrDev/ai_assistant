@@ -8,7 +8,9 @@ _clients: dict[tuple, object] = {}
 
 
 def tracer(ctx, purpose: str = "agent"):
-	"""A LangChainTracer for one turn, or None when tracing is off."""
+	"""A LangChainTracer for one turn, or None when tracing is off. Evaluations are traced by Client.evaluate."""
+	if ctx.is_evaluation:
+		return None
 	client = get_client()
 	if not client:
 		return None

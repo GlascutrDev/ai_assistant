@@ -699,4 +699,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | 8. Desk chat drawer and full page | Done. Launcher button and drawer on every Desk page (Ctrl+I), full page at `/desk/ai-assistant/<conversation>`. One `ChatPanel` class serves both; attachments and voice plug in as panel extensions. Not yet checked in a browser. |
 | 9. RAG | Done. AC19–AC21 pass. `search_knowledge` is offered only when RAG is on. Knowledge-document attachments use the §6.8 extractors. |
 | 10. LangSmith tracing, usage report | Done. AC24 passes. **[Decision]** Tracing uses a `LangChainTracer` in the turn's callbacks, built from a per-site `langsmith.Client` (no environment variables); its root run ID goes into `AI Message.langsmith_run_id`. Verified: `Client(hide_inputs=, hide_outputs=)` in langsmith 0.14.8. |
-| 11–14 | Not started |
+| 11. Evaluation | Done. AC26–AC29 pass with a local fake of `Client.evaluate`. **[Decision]** Targets run one at a time (`max_concurrency=0`) because they share the job's DB connection; `evaluation_max_concurrency` is not used yet. The runner switches to `evaluation_user` with `frappe.set_user` (in `evals/` only). Target-model calls in an evaluation are logged with purpose `evaluation` too, so they do not count toward a user's daily limit. |
+| 12–14 | Not started |
