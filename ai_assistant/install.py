@@ -14,6 +14,7 @@ DEFAULT_MODELS = (
 		"provider_label": "Anthropic",
 		"model_name": "claude-sonnet-5-5",
 		"model_type": "Chat",
+		"use_default_temperature": 1,
 		"max_output_tokens": 8192,
 		"context_window": 200000,
 		"supports_tools": 1,

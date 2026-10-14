@@ -58,3 +58,16 @@ class TestConnection(IntegrationTestCase):
 			result = connection.test(factories.FAKE_PROVIDER)
 		self.assertFalse(result["ok"])
 		self.assertNotIn("sk-test-not-a-real-key", result["error"])
+
+
+class TestDefaultTemperature(IntegrationTestCase):
+	def test_temperature_omitted_when_model_default_is_used(self):
+		kwargs = providers.chat_kwargs(
+			"Anthropic", api_key="k", base_url=None, max_tokens=10, temperature=None, timeout=5
+		)
+		self.assertNotIn("temperature", kwargs)
+		doc = factories.configure()
+		doc.models[0].use_default_temperature = 1
+		doc.save()
+		registry.clear_cache()
+		self.assertIsNone(registry.get_main_model().temperature)

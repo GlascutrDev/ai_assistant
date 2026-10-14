@@ -15,6 +15,7 @@
   "max_output_tokens",
   "context_window",
   "temperature",
+  "use_default_temperature",
   "timeout_seconds",
   "dimensions",
   "capabilities_section",
@@ -85,9 +86,17 @@
   },
   {
    "default": "0.2",
+   "depends_on": "eval:!doc.use_default_temperature",
    "fieldname": "temperature",
    "fieldtype": "Float",
    "label": "Temperature"
+  },
+  {
+   "default": "0",
+   "description": "Send no temperature. Required by models that reject it, e.g. Claude Opus 5.5, Sonnet 5.5, and Fable.",
+   "fieldname": "use_default_temperature",
+   "fieldtype": "Check",
+   "label": "Use Default Temperature"
   },
   {
    "default": "120",

@@ -87,7 +87,7 @@ def _build_chat(profile, credential):
 		api_key=api_key(credential),
 		base_url=credential.base_url,
 		max_tokens=profile.max_output_tokens,
-		temperature=profile.temperature,
+		temperature=None if profile.use_default_temperature else profile.temperature,
 		timeout=profile.timeout_seconds or 120,
 		organization=credential.organization,
 	)

@@ -36,12 +36,15 @@ def chat_kwargs(
 	"""Constructor kwargs for the provider's chat class, built from one profile + credential."""
 	base_url = base_url or spec(provider).default_base_url
 	if provider == "Ollama":
-		kw = {"base_url": base_url, "temperature": temperature, "client_kwargs": {"timeout": timeout}}
+		kw = {"base_url": base_url, "client_kwargs": {"timeout": timeout}}
 		if max_tokens:
 			kw["num_predict"] = max_tokens
+	else:
+		kw = {"api_key": api_key, "timeout": timeout, "max_retries": 2}
+	if temperature is not None:
+		kw["temperature"] = temperature
+	if provider == "Ollama":
 		return kw
-
-	kw = {"api_key": api_key, "temperature": temperature, "timeout": timeout, "max_retries": 2}
 	if max_tokens:
 		kw["max_tokens"] = max_tokens
 	if base_url and provider != "Google Gemini":
