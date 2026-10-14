@@ -139,3 +139,21 @@ class TestBootstrapReason(IntegrationTestCase):
 			boot = chat.get_bootstrap()
 		self.assertFalse(boot["enabled"])
 		self.assertIn("fake-main", boot["reason"])
+
+
+class TestJsonArguments(IntegrationTestCase):
+	def test_context_sent_as_json_string(self):
+		factories.configure()
+		user = factories.assistant_user()
+		with fake_llm.use_models(chat={"fake-main": fake_llm.fake_chat("Hi!", "Title")}), self.set_user(user):
+			result = chat.send_message(
+				text="hi", context='{"doctype": "ToDo", "name": null}', attachments="[]"
+			)
+		self.assertEqual(
+			frappe.db.get_value("AI Conversation", result["conversation"], "context_doctype"), "ToDo"
+		)
+
+	def test_wrong_json_type_refused(self):
+		factories.configure()
+		with self.set_user(factories.assistant_user()), self.assertRaises(frappe.ValidationError):
+			chat.send_message(text="hi", context="[1, 2]")

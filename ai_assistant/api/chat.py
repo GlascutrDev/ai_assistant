@@ -13,11 +13,13 @@ from ai_assistant.services import attachments as files
 def send_message(
 	text: str,
 	conversation: str | None = None,
-	context: dict | None = None,
-	attachments: list[str] | None = None,
+	context: dict | str | None = None,
+	attachments: list[str] | str | None = None,
 	voice_attachment: str | None = None,
 ) -> dict:
 	access.require_user()
+	context = _json_arg(context, dict)
+	attachments = _json_arg(attachments, list)
 	conv = conversations.get_or_create(conversation, context)
 	message = conversations.start_turn(conv, text, attachments=attachments, voice_attachment=voice_attachment)
 	return {"conversation": conv.name, "message": message.name}
@@ -26,10 +28,10 @@ def send_message(
 @frappe.whitelist(methods=["POST"])
 @rate_limit(limit=60, seconds=60)
 def decide_action(
-	action_request: str, decision: str, edited_args: dict | None = None, message: str | None = None
+	action_request: str, decision: str, edited_args: dict | str | None = None, message: str | None = None
 ) -> dict:
 	access.require_user()
-	return actions.decide(action_request, decision, edited_args, message)
+	return actions.decide(action_request, decision, _json_arg(edited_args, dict), message)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -101,3 +103,17 @@ def transcribe(conversation: str | None = None, duration_seconds: float | None =
 	conv = conversations.get_or_create(conversation)
 	data = files.read_upload(audio.stream)
 	return voice.transcribe(conv, audio.filename or "recording.webm", data, duration_seconds)
+
+
+def _json_arg(value, expected: type):
+	"""frappe.call sends nested objects as JSON strings; accept both forms, reject anything else."""
+	if value in (None, ""):
+		return None
+	if isinstance(value, str):
+		try:
+			value = frappe.parse_json(value)
+		except ValueError:
+			frappe.throw(frappe._("Invalid JSON argument."))
+	if not isinstance(value, expected):
+		frappe.throw(frappe._("Expected a {0}.").format(expected.__name__))
+	return value
