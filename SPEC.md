@@ -204,7 +204,7 @@ Permissions: System Manager write; others read only through RAG.
 Permissions: owner only (`if_owner`) for AI Assistant User; System Manager read all. **[Decision]** A permission query hook also limits list views to `user = session user`, so sharing cannot expose a conversation.
 
 ### 4.8 AI Message — append-only
-`conversation`, `idx_in_thread`, `role` (`user`, `assistant`, `tool`, `system_note`), `content` (Long Text), `tool_name`, `tool_args` (JSON), `tool_status` (`ok`, `denied`, `error`), `model`, `input_tokens`, `output_tokens`, `latency_ms`, `langsmith_run_id`, `input_mode` (`text`, `voice`), `attachments` (Table MultiSelect → `AI Attachment`).
+`conversation`, `idx_in_thread`, `role` (`user`, `assistant`, `tool`, `system_note`), `content` (Long Text), `tool_name`, `tool_args` (JSON), `tool_status` (`ok`, `denied`, `error`), `model`, `input_tokens`, `output_tokens`, `latency_ms`, `langsmith_run_id`, `input_mode` (`text`, `voice`), `attachments` (Table MultiSelect → child `AI Message Attachment` with a Link to `AI Attachment`).
 This is the display transcript. The LangGraph checkpoint (§6.4) is the agent's working state. Both are written each turn; the UI reads only `AI Message`.
 
 ### 4.9 AI Action Request
@@ -685,4 +685,7 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 
 ## 17. Build status (2026-10-14)
 
-Not started. The app has only the bench scaffold.
+| Step (§16) | Status |
+|---|---|
+| 1. DocTypes, role, defaults | Done. Password in child rows survives a Settings save (test). Per-user DocTypes grant read to `All`; `has_permission` hooks keep them owner-only (hooks can only deny). |
+| 2–14 | Not started |

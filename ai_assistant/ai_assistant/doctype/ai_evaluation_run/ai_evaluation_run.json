@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-10-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "status",
+  "passed",
+  "dataset",
+  "target_model",
+  "evaluation_model",
+  "column_break_time",
+  "examples",
+  "started_at",
+  "finished_at",
+  "langsmith_experiment_url",
+  "results_section",
+  "scores",
+  "error"
+ ],
+ "fields": [
+  {
+   "default": "Queued",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Queued\nRunning\nCompleted\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "passed",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Passed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dataset",
+   "fieldtype": "Data",
+   "label": "Dataset",
+   "read_only": 1
+  },
+  {
+   "fieldname": "target_model",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Target Model",
+   "read_only": 1
+  },
+  {
+   "fieldname": "evaluation_model",
+   "fieldtype": "Data",
+   "label": "Test/Evaluation Model",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_time",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "examples",
+   "fieldtype": "Int",
+   "label": "Examples",
+   "read_only": 1
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "label": "Started At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "finished_at",
+   "fieldtype": "Datetime",
+   "label": "Finished At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "langsmith_experiment_url",
+   "fieldtype": "Data",
+   "label": "LangSmith Experiment URL",
+   "options": "URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "results_section",
+   "fieldtype": "Section Break",
+   "label": "Results"
+  },
+  {
+   "fieldname": "scores",
+   "fieldtype": "JSON",
+   "label": "Scores",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Long Text",
+   "label": "Error",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Evaluation Run",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

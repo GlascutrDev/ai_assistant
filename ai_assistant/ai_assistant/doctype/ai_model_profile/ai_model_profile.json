@@ -1,0 +1,167 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-14 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "profile_id",
+  "provider_label",
+  "model_name",
+  "model_type",
+  "enabled",
+  "column_break_limits",
+  "max_output_tokens",
+  "context_window",
+  "temperature",
+  "timeout_seconds",
+  "dimensions",
+  "capabilities_section",
+  "supports_tools",
+  "supports_images",
+  "supports_pdf",
+  "supports_audio",
+  "column_break_cost",
+  "input_cost_per_mtok",
+  "output_cost_per_mtok",
+  "cost_per_audio_minute"
+ ],
+ "fields": [
+  {
+   "description": "Unique slug, e.g. claude-main",
+   "fieldname": "profile_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Profile ID",
+   "reqd": 1
+  },
+  {
+   "description": "Label of a provider row",
+   "fieldname": "provider_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Provider Label",
+   "reqd": 1
+  },
+  {
+   "fieldname": "model_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Model Name",
+   "reqd": 1
+  },
+  {
+   "default": "Chat",
+   "fieldname": "model_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Model Type",
+   "options": "Chat\nEmbedding\nSpeech-to-text",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "column_break_limits",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "4096",
+   "fieldname": "max_output_tokens",
+   "fieldtype": "Int",
+   "label": "Max Output Tokens"
+  },
+  {
+   "default": "200000",
+   "fieldname": "context_window",
+   "fieldtype": "Int",
+   "label": "Context Window"
+  },
+  {
+   "default": "0.2",
+   "fieldname": "temperature",
+   "fieldtype": "Float",
+   "label": "Temperature"
+  },
+  {
+   "default": "120",
+   "fieldname": "timeout_seconds",
+   "fieldtype": "Int",
+   "label": "Timeout Seconds"
+  },
+  {
+   "depends_on": "eval:doc.model_type=='Embedding'",
+   "fieldname": "dimensions",
+   "fieldtype": "Int",
+   "label": "Dimensions"
+  },
+  {
+   "fieldname": "capabilities_section",
+   "fieldtype": "Section Break",
+   "label": "Capabilities"
+  },
+  {
+   "default": "0",
+   "fieldname": "supports_tools",
+   "fieldtype": "Check",
+   "label": "Supports Tools"
+  },
+  {
+   "default": "0",
+   "fieldname": "supports_images",
+   "fieldtype": "Check",
+   "label": "Supports Images"
+  },
+  {
+   "default": "0",
+   "fieldname": "supports_pdf",
+   "fieldtype": "Check",
+   "label": "Supports PDF"
+  },
+  {
+   "default": "0",
+   "fieldname": "supports_audio",
+   "fieldtype": "Check",
+   "label": "Supports Audio"
+  },
+  {
+   "fieldname": "column_break_cost",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "input_cost_per_mtok",
+   "fieldtype": "Currency",
+   "label": "Input Cost per 1M Tokens"
+  },
+  {
+   "fieldname": "output_cost_per_mtok",
+   "fieldtype": "Currency",
+   "label": "Output Cost per 1M Tokens"
+  },
+  {
+   "depends_on": "eval:doc.model_type=='Speech-to-text'",
+   "fieldname": "cost_per_audio_minute",
+   "fieldtype": "Currency",
+   "label": "Cost Per Audio Minute"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Model Profile",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

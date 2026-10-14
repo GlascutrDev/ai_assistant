@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-10-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "user",
+  "status",
+  "main_model",
+  "last_message_at",
+  "column_break_usage",
+  "total_input_tokens",
+  "total_output_tokens",
+  "total_cost",
+  "context_doctype",
+  "context_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "User",
+   "options": "User",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nWaiting for confirmation\nRunning\nArchived",
+   "read_only": 1
+  },
+  {
+   "description": "Profile used last",
+   "fieldname": "main_model",
+   "fieldtype": "Data",
+   "label": "Main Model",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_message_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Last Message At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_usage",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_input_tokens",
+   "fieldtype": "Int",
+   "label": "Total Input Tokens",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_output_tokens",
+   "fieldtype": "Int",
+   "label": "Total Output Tokens",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "label": "Total Cost",
+   "read_only": 1
+  },
+  {
+   "fieldname": "context_doctype",
+   "fieldtype": "Link",
+   "label": "Context Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "context_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Context Name",
+   "options": "context_doctype",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Conversation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0
+  },
+  {
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "All",
+   "share": 0
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
+}

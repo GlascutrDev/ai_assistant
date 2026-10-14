@@ -9,6 +9,21 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
+    "langchain>=1.0",
+    "langgraph>=1.0",
+    "langsmith",
+    "langchain-anthropic",
+    "langchain-openai",
+    "langchain-google-genai",
+    "langchain-deepseek",
+    "langchain-mistralai",
+    "langchain-ollama",
+    "langchain-text-splitters",
+    "openevals",
+    "pypdf",
+    "python-docx",
+    "pillow",
+    "filetype",
 ]
 
 [build-system]

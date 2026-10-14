@@ -1,0 +1,158 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "autoincrement",
+ "creation": "2026-10-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "conversation",
+  "idx_in_thread",
+  "role",
+  "input_mode",
+  "content",
+  "attachments",
+  "tool_section",
+  "tool_name",
+  "tool_status",
+  "tool_args",
+  "model_section",
+  "model",
+  "input_tokens",
+  "output_tokens",
+  "column_break_model",
+  "latency_ms",
+  "langsmith_run_id"
+ ],
+ "fields": [
+  {
+   "fieldname": "conversation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Conversation",
+   "options": "AI Conversation",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "idx_in_thread",
+   "fieldtype": "Int",
+   "label": "Index in Thread"
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Role",
+   "options": "user\nassistant\ntool\nsystem_note"
+  },
+  {
+   "default": "text",
+   "fieldname": "input_mode",
+   "fieldtype": "Select",
+   "label": "Input Mode",
+   "options": "text\nvoice"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Long Text",
+   "label": "Content"
+  },
+  {
+   "fieldname": "attachments",
+   "fieldtype": "Table MultiSelect",
+   "label": "Attachments",
+   "options": "AI Message Attachment"
+  },
+  {
+   "fieldname": "tool_section",
+   "fieldtype": "Section Break",
+   "label": "Tool"
+  },
+  {
+   "fieldname": "tool_name",
+   "fieldtype": "Data",
+   "label": "Tool Name"
+  },
+  {
+   "fieldname": "tool_status",
+   "fieldtype": "Select",
+   "label": "Tool Status",
+   "options": "\nok\ndenied\nerror"
+  },
+  {
+   "fieldname": "tool_args",
+   "fieldtype": "JSON",
+   "label": "Tool Args"
+  },
+  {
+   "fieldname": "model_section",
+   "fieldtype": "Section Break",
+   "label": "Model"
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model"
+  },
+  {
+   "fieldname": "input_tokens",
+   "fieldtype": "Int",
+   "label": "Input Tokens"
+  },
+  {
+   "fieldname": "output_tokens",
+   "fieldtype": "Int",
+   "label": "Output Tokens"
+  },
+  {
+   "fieldname": "column_break_model",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "latency_ms",
+   "fieldtype": "Int",
+   "label": "Latency (ms)"
+  },
+  {
+   "fieldname": "langsmith_run_id",
+   "fieldtype": "Data",
+   "label": "LangSmith Run ID"
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Message",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0
+  },
+  {
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "All",
+   "share": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

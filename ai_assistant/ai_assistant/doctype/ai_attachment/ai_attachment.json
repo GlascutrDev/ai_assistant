@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-10-14 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "conversation",
+  "user",
+  "file",
+  "file_name",
+  "mime_type",
+  "size_bytes",
+  "column_break_status",
+  "kind",
+  "status",
+  "delivery",
+  "page_count",
+  "duration_seconds",
+  "sent",
+  "content_section",
+  "extracted_text",
+  "transcript",
+  "error"
+ ],
+ "fields": [
+  {
+   "fieldname": "conversation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Conversation",
+   "options": "AI Conversation",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "file",
+   "fieldtype": "Link",
+   "label": "File",
+   "options": "File",
+   "read_only": 1
+  },
+  {
+   "fieldname": "file_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "File Name"
+  },
+  {
+   "fieldname": "mime_type",
+   "fieldtype": "Data",
+   "label": "MIME Type"
+  },
+  {
+   "fieldname": "size_bytes",
+   "fieldtype": "Int",
+   "label": "Size Bytes"
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Kind",
+   "options": "image\npdf\ndocument\nspreadsheet\ntext\naudio\nvoice"
+  },
+  {
+   "default": "Uploaded",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Uploaded\nProcessing\nReady\nFailed"
+  },
+  {
+   "fieldname": "delivery",
+   "fieldtype": "Select",
+   "label": "Delivery",
+   "options": "\nnative\ntext\nindexed"
+  },
+  {
+   "fieldname": "page_count",
+   "fieldtype": "Int",
+   "label": "Page Count"
+  },
+  {
+   "fieldname": "duration_seconds",
+   "fieldtype": "Float",
+   "label": "Duration Seconds"
+  },
+  {
+   "default": "0",
+   "description": "Set when the attachment is sent with a message",
+   "fieldname": "sent",
+   "fieldtype": "Check",
+   "label": "Sent"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "extracted_text",
+   "fieldtype": "Long Text",
+   "label": "Extracted Text"
+  },
+  {
+   "fieldname": "transcript",
+   "fieldtype": "Long Text",
+   "label": "Transcript"
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error"
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Attachment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0
+  },
+  {
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "All",
+   "share": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
