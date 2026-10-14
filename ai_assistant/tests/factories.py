@@ -79,8 +79,9 @@ def configure(**values):
 	doc.update(values)
 	doc.flags.ignore_permissions = True
 	doc.save()
+	frappe.db.set_single_value(app_settings.SETTINGS, "index_stale", values.get("index_stale", 0))
 	frappe.clear_document_cache(app_settings.SETTINGS, app_settings.SETTINGS)
-	return doc
+	return frappe.get_single(app_settings.SETTINGS)
 
 
 def _chat(profile_id: str) -> dict:

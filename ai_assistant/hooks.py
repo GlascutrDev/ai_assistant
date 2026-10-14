@@ -27,6 +27,15 @@ permission_query_conditions = {
 
 scheduler_events = {
 	"hourly": ["ai_assistant.tasks.expire_action_requests"],
+	"daily": ["ai_assistant.tasks.reindex_changed_sources"],
+}
+
+doc_events = {
+	"*": {
+		"on_update": "ai_assistant.rag.indexer.on_doc_change",
+		"on_trash": "ai_assistant.rag.indexer.on_doc_trash",
+		"after_rename": "ai_assistant.rag.indexer.on_doc_rename",
+	}
 }
 
 app_include_js = "ai_assistant.bundle.js"

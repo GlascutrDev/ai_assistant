@@ -19,6 +19,14 @@ class AIAssistantSettings(Document):
 		self._validate_choices()
 		self._mark_index_stale()
 
+	def on_update(self):
+		"""See frappe.model.document.Document.on_update."""
+		from ai_assistant.llm import registry
+		from ai_assistant.rag import indexer
+
+		registry.clear_cache()
+		indexer.clear_source_cache()
+
 	def provider_row(self, label: str | None):
 		return next((row for row in self.providers if row.label == label), None)
 

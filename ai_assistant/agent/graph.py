@@ -22,7 +22,7 @@ def build(ctx: TurnContext, attachments: list[dict] | None = None):
 	"""The agent for this turn. `ctx.model_profile` is the main model, or the target in an evaluation."""
 	conf = settings.get()
 	model = registry.get_chat_model(ctx.model_profile)
-	turn_tools = tools.for_turn(read_only=bool(conf.read_only_mode))
+	turn_tools = tools.for_turn(read_only=bool(conf.read_only_mode), rag=bool(conf.rag_enabled))
 	write_names = {t.name for t in turn_tools} & tools.write_tool_names()
 	stack = [
 		middleware.token_budget,

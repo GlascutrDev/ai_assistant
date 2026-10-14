@@ -697,4 +697,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | 6. Write tools, HITL, action requests | Done. AC07–AC13, AC22, AC23 pass. A write that fails its pre-check is stored as Failed and auto-rejected with the reason. A new message on a thread with an expired or cancelled interrupt rejects that interrupt first. `AI Action Request.tool_call_id` links a request to its tool result. |
 | 7. Limits, summarization, model switch | Done. AC15–AC18, AC25 pass. Summarization keeps the last 10 messages. The context-window check runs before each model call. |
 | 8. Desk chat drawer and full page | Done. Launcher button and drawer on every Desk page (Ctrl+I), full page at `/desk/ai-assistant/<conversation>`. One `ChatPanel` class serves both; attachments and voice plug in as panel extensions. Not yet checked in a browser. |
-| 9–14 | Not started |
+| 9. RAG | Done. AC19–AC21 pass. `search_knowledge` is offered only when RAG is on. Knowledge-document attachments use the §6.8 extractors. |
+| 10–14 | Not started |
