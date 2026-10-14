@@ -127,3 +127,15 @@ class TestChat(IntegrationTestCase):
 		with self.set_user(self.user):
 			payload = chat.get_conversation(conversation=result["conversation"])
 		self.assertNotIn("sk-test-not-a-real-key", frappe.as_json(payload))
+
+
+class TestBootstrapReason(IntegrationTestCase):
+	def test_admin_sees_setup_hint(self):
+		doc = factories.configure(enabled=0)
+		doc.models[0].enabled = 0
+		doc.main_model = "fake-main"
+		doc.save()
+		with self.set_user(factories.assistant_user(roles=("System Manager",))):
+			boot = chat.get_bootstrap()
+		self.assertFalse(boot["enabled"])
+		self.assertIn("fake-main", boot["reason"])

@@ -17,9 +17,17 @@ class AssistantPage {
 	async make() {
 		const boot = ai_assistant.boot || (await ai_assistant.api.bootstrap());
 		if (!boot.enabled) {
-			$(this.page.body).append(
-				$(`<div class="text-muted text-center p-5"></div>`).text(__("The AI Assistant is not available for you."))
-			);
+			const $note = $(`<div class="text-muted text-center p-5"></div>`)
+				.text(boot.reason || __("The AI Assistant is not available for you."))
+				.appendTo(this.page.body);
+			if (boot.is_admin) {
+				$(`<div class="mt-3"><button class="btn btn-sm btn-primary"></button></div>`)
+					.find("button")
+					.text(__("Open AI Assistant Settings"))
+					.on("click", () => frappe.set_route("Form", "AI Assistant Settings"))
+					.end()
+					.appendTo($note);
+			}
 			return;
 		}
 		this.page.set_title(boot.assistant_name);

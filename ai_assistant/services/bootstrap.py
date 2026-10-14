@@ -1,6 +1,7 @@
 """What the chat UI needs at start (SPEC §12 get_bootstrap)."""
 
 import frappe
+from frappe import _
 
 from ai_assistant.services import access, budget, settings
 
@@ -8,8 +9,13 @@ from ai_assistant.services import access, budget, settings
 def get() -> dict:
 	user = frappe.session.user
 	conf = settings.get()
-	if user == "Guest" or not conf.enabled or not access.has_access(user):
-		return {"enabled": False}
+	if user == "Guest" or not access.has_access(user):
+		return {"enabled": False, "reason": _("You do not have access to the AI Assistant.")}
+	if not conf.enabled:
+		reason = _("The AI Assistant is switched off.")
+		if access.is_admin(user):
+			reason = setup_hint(conf)
+		return {"enabled": False, "reason": reason, "is_admin": access.is_admin(user)}
 	main = settings.find_profile(conf.main_model)
 	return {
 		"enabled": True,
@@ -28,3 +34,20 @@ def get() -> dict:
 		"supports_pdf": bool(main and main.supports_pdf),
 		"is_admin": access.is_admin(user),
 	}
+
+
+def setup_hint(conf) -> str:
+	"""What a System Manager still has to do before the assistant can be enabled."""
+	main = settings.find_profile(conf.main_model)
+	provider = main and next((p for p in conf.providers if p.label == main.provider_label), None)
+	if not main:
+		return _("Choose a Main Model in AI Assistant Settings.")
+	if not provider or not provider.enabled:
+		return _("Enable the provider {0} and enter its API key in AI Assistant Settings.").format(
+			main.provider_label
+		)
+	if not main.enabled:
+		return _("Tick Enabled on the model {0} (Models tab), then tick Enabled on the General tab.").format(
+			main.profile_id
+		)
+	return _("Tick Enabled on the General tab of AI Assistant Settings and save.")
