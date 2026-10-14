@@ -27,7 +27,7 @@ def build(ctx: TurnContext, attachments: list[dict] | None = None):
 	stack = [
 		middleware.token_budget,
 		SummarizationMiddleware(
-			model=model, trigger=("tokens", summarize_at(ctx.model_profile)), keep=("messages", 20)
+			model=model, trigger=("tokens", summarize_at(ctx.model_profile)), keep=("messages", 10)
 		),
 		ModelCallLimitMiddleware(run_limit=conf.max_model_calls_per_turn or 12, exit_behavior="end"),
 		ToolCallLimitMiddleware(run_limit=conf.max_tool_calls_per_turn or 20, exit_behavior="end"),

@@ -1,21 +1,33 @@
 """Custom middleware and the usage callback for a turn (SPEC §6.5, §9)."""
 
+import frappe
+from frappe import _
 from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_call
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.messages.utils import count_tokens_approximately
 
 from ai_assistant.llm import usage
 from ai_assistant.persistence import dblock
-from ai_assistant.services import budget
+from ai_assistant.services import budget, settings
+
+
+class ConversationTooLongError(frappe.ValidationError):
+	pass
 
 
 @wrap_model_call
 def token_budget(request: ModelRequest, handler) -> ModelResponse:
-	"""Stop before a model call when the user's daily tokens or the site's monthly budget is used up."""
+	"""Before each model call: the daily and monthly budgets, and the model's context window."""
+	ctx = request.runtime.context
 	with dblock.locked():
-		if request.runtime.context.is_evaluation:
+		if ctx.is_evaluation:
 			budget.assert_site_budget()
 		else:
 			budget.assert_available()
+		profile = settings.find_profile(ctx.model_profile)
+	window = profile.context_window if profile else 0
+	if window and count_tokens_approximately(request.messages) > window:
+		frappe.throw(_("This conversation is too long. Start a new one."), ConversationTooLongError)
 	return handler(request)
 
 

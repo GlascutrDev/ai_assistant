@@ -10,7 +10,7 @@ from langgraph.types import Command
 from ai_assistant import tools
 from ai_assistant.agent import graph, transcript
 from ai_assistant.agent.context import TurnContext
-from ai_assistant.agent.middleware import UsageRecorder
+from ai_assistant.agent.middleware import ConversationTooLongError, UsageRecorder
 from ai_assistant.agent.stream import Publisher
 from ai_assistant.llm.registry import ModelNotConfiguredError
 from ai_assistant.persistence import dblock
@@ -47,7 +47,7 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 		graph_input = Command(resume=resume) if resume else {"messages": [user_input(message)]}
 		result = execute(ctx, graph_input, publisher)
 		finalize(conv, ctx, result, publisher, first_message=message)
-	except (BudgetExceededError, ModelNotConfiguredError) as e:
+	except (BudgetExceededError, ModelNotConfiguredError, ConversationTooLongError) as e:
 		fail(conv.name, publisher, str(e))
 	except Exception:
 		frappe.log_error(f"AI Assistant turn failed ({conv.name})")
