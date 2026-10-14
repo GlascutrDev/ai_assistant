@@ -10,6 +10,7 @@ CHECKPOINT_DDL = (
 		`parent_checkpoint_id` VARCHAR(64) NULL,
 		`type` VARCHAR(32) NULL,
 		`checkpoint` LONGBLOB NOT NULL,
+		`metadata_type` VARCHAR(32) NULL,
 		`metadata` LONGBLOB NOT NULL,
 		`created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
 		PRIMARY KEY (`thread_id`, `checkpoint_ns`, `checkpoint_id`)

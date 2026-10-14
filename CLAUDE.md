@@ -169,6 +169,12 @@ Hooks (in `settings.json`):
 - **SessionStart:** app install state on both sites, missing Python packages, git state.
 - **After each Write/Edit:** formats `.py` with ruff 0.14.10; flags likely rule violations (permission bypass, hard-coded models, keys, unsafe endpoints, raw HTML in JS) back to Claude without blocking.
 
+## Gotchas
+
+- LangGraph runs checkpoint writes and parallel tool calls in worker threads that share the job's `frappe.db` connection. Hold `persistence.dblock.LOCK` around any DB work that runs inside the graph.
+- `frappe.db.sql` decodes the query as UTF-8: pass binary values as hex and `UNHEX()` them.
+- `IntegrationTestCase` rolls back once per class, not per test. Reset Settings with `factories.configure()` in `setUp`, and undo meta changes (property setters) with `addCleanup`.
+
 ## Gotchas to verify before relying on them
 
 Verified facts live in `.claude/references/`. Still open:
