@@ -509,7 +509,7 @@ Usage comes from `AIMessage.usage_metadata` (input, output, cache tokens) and is
 
 ### 11.1 Tracing
 - Off by default. When on, `observability/tracing.py` wraps each turn in `langsmith.tracing_context(enabled=True, project_name=..., tags=[site, model_profile], metadata={"user": user, "conversation": name})` with a `langsmith.Client` built from Settings (not environment variables, so each site can use its own project).
-- `langsmith_hide_io` builds the client with input/output hiding. **[Verify]** the current `Client(hide_inputs=..., hide_outputs=...)` parameters.
+- `langsmith_hide_io` builds the client with `Client(hide_inputs=True, hide_outputs=True)` (verified in langsmith 0.14.8).
 - The run ID of each assistant message is stored in `AI Message.langsmith_run_id` and shown to System Managers as a "View trace" link.
 
 ### 11.2 Evaluation with the test/evaluation model
@@ -698,4 +698,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | 7. Limits, summarization, model switch | Done. AC15–AC18, AC25 pass. Summarization keeps the last 10 messages. The context-window check runs before each model call. |
 | 8. Desk chat drawer and full page | Done. Launcher button and drawer on every Desk page (Ctrl+I), full page at `/desk/ai-assistant/<conversation>`. One `ChatPanel` class serves both; attachments and voice plug in as panel extensions. Not yet checked in a browser. |
 | 9. RAG | Done. AC19–AC21 pass. `search_knowledge` is offered only when RAG is on. Knowledge-document attachments use the §6.8 extractors. |
-| 10–14 | Not started |
+| 10. LangSmith tracing, usage report | Done. AC24 passes. **[Decision]** Tracing uses a `LangChainTracer` in the turn's callbacks, built from a per-site `langsmith.Client` (no environment variables); its root run ID goes into `AI Message.langsmith_run_id`. Verified: `Client(hide_inputs=, hide_outputs=)` in langsmith 0.14.8. |
+| 11–14 | Not started |

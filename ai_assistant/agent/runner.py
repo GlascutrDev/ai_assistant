@@ -13,6 +13,7 @@ from ai_assistant.agent.context import TurnContext
 from ai_assistant.agent.middleware import ConversationTooLongError, UsageRecorder
 from ai_assistant.agent.stream import Publisher
 from ai_assistant.llm.registry import ModelNotConfiguredError
+from ai_assistant.observability import tracing
 from ai_assistant.persistence import dblock
 from ai_assistant.services import actions, conversations, settings
 from ai_assistant.services.budget import BudgetExceededError
@@ -26,6 +27,7 @@ class TurnResult:
 	interrupts: list = field(default_factory=list)
 	cancelled: bool = False
 	usage: UsageRecorder | None = None
+	run_id: str | None = None
 
 
 def run_turn(conversation: str, message: str | None = None, resume: dict | None = None):
@@ -72,11 +74,21 @@ def execute(
 	agent = graph.build(ctx, transcript.attachments_of(ctx.conversation))
 	recorder = UsageRecorder(profile_id=ctx.model_profile, conversation=ctx.conversation, purpose=purpose)
 	result = TurnResult(usage=recorder)
+	turn_tracer = tracing.tracer(ctx, purpose)
 	config = {
 		"configurable": {"thread_id": ctx.conversation},
-		"callbacks": [recorder],
+		"callbacks": [recorder, turn_tracer] if turn_tracer else [recorder],
 		"recursion_limit": 200,
 	}
+	try:
+		_stream(agent, graph_input, config, ctx, result, publisher)
+	finally:
+		result.run_id = tracing.root_run_id(turn_tracer)
+		tracing.flush(turn_tracer)
+	return result
+
+
+def _stream(agent, graph_input, config, ctx: TurnContext, result: TurnResult, publisher: Publisher | None):
 	seen = set()
 	for chunk in agent.stream(
 		graph_input, config, context=ctx, stream_mode=["messages", "updates"], version="v2", durability="sync"
@@ -99,7 +111,6 @@ def execute(
 				result.interrupts.extend(update)
 			elif isinstance(update, dict):
 				_collect(update.get("messages") or [], seen, result, publisher)
-	return result
 
 
 def finalize(
@@ -107,7 +118,7 @@ def finalize(
 ):
 	resume_now = False
 	with dblock.locked():
-		transcript.persist(conv.name, result.messages, ctx.model_profile)
+		transcript.persist(conv.name, result.messages, ctx.model_profile, run_id=result.run_id)
 		transcript.add_usage(conv.name, result.usage, ctx.model_profile)
 		actions.record_results(conv.name, [m for m in result.messages if isinstance(m, ToolMessage)])
 		if result.cancelled:

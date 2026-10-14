@@ -32,7 +32,7 @@ def attachments_of(conversation: str | None) -> list[dict]:
 	)
 
 
-def persist(conversation: str, messages: list, profile_id: str):
+def persist(conversation: str, messages: list, profile_id: str, run_id: str | None = None):
 	calls = {}
 	for m in messages:
 		if isinstance(m, AIMessage):
@@ -47,6 +47,7 @@ def persist(conversation: str, messages: list, profile_id: str):
 					model=profile_id,
 					input_tokens=input_tokens,
 					output_tokens=output_tokens,
+					langsmith_run_id=run_id,
 				)
 		elif isinstance(m, ToolMessage):
 			call = calls.get(m.tool_call_id) or {}

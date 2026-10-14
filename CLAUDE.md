@@ -181,5 +181,4 @@ Verified facts live in `.claude/references/`. Still open:
 
 - Password values in child rows of the Single survive a Settings save (SPEC §4.2).
 - LangChain/LangGraph wheels and the bench's existing `openai==3.24.0` on Python 3.14.
-- `langsmith.Client` input/output hiding parameters (SPEC §11).
 - The browser microphone (`getUserMedia`) works only over HTTPS or on `localhost`; `today.localhost` counts as a secure context in Chrome, but production sites need HTTPS.
