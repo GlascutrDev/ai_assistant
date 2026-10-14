@@ -56,6 +56,23 @@ def check_values(doctype: str, values: dict, new: bool):
 			frappe.throw(_("The AI Assistant cannot set passwords."))
 		if not new and (df.read_only or df.set_only_once):
 			frappe.throw(_("Field {0} cannot be changed.").format(field))
+		if df.fieldtype in table_fields:
+			_check_rows(doctype, df, values[field])
+
+
+def _check_rows(doctype: str, df, rows):
+	"""Child rows may set only the child DocType's fields the user can write; no name, parent, or docstatus."""
+	if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
+		frappe.throw(_("{0} must be a list of rows.").format(df.fieldname))
+	child = frappe.get_meta(df.options)
+	levels = set(child.get_permlevel_access(permission_type="write", parenttype=doctype))
+	for row in rows:
+		for field in row:
+			child_df = child.get_field(field)
+			if not child_df or child_df.fieldtype in no_value_fields or child_df.permlevel not in levels:
+				frappe.throw(
+					_("Field {0} does not exist on {1} or you cannot write it.").format(field, df.options)
+				)
 
 
 def preview_html(tool_name: str, args: dict) -> str:

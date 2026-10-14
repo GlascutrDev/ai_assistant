@@ -46,6 +46,18 @@ def create(conv, file_name: str, data: bytes, voice: bool = False):
 	).insert(ignore_permissions=True)
 
 
+def read_upload(stream) -> bytes:
+	"""Read at most the size limit plus one byte, so an oversize upload is refused without reading it all."""
+	limit = (settings.get().max_file_size_mb or 20) * 1024 * 1024
+	data = stream.read(limit + 1)
+	if len(data) > limit:
+		frappe.throw(
+			_("File too large. The limit is {0} MB.").format(settings.get().max_file_size_mb or 20),
+			upload.UploadRefusedError,
+		)
+	return data
+
+
 def enqueue_processing(attachment: str):
 	frappe.enqueue(
 		"ai_assistant.services.attachments.process",

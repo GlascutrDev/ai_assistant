@@ -1,6 +1,7 @@
 """Chat endpoints (SPEC §12). Thin: access check, then services."""
 
 import frappe
+from frappe.rate_limiter import rate_limit
 
 from ai_assistant.agent import runner
 from ai_assistant.services import access, actions, bootstrap, conversations, voice
@@ -8,6 +9,7 @@ from ai_assistant.services import attachments as files
 
 
 @frappe.whitelist(methods=["POST"])
+@rate_limit(limit=30, seconds=60)
 def send_message(
 	text: str,
 	conversation: str | None = None,
@@ -22,6 +24,7 @@ def send_message(
 
 
 @frappe.whitelist(methods=["POST"])
+@rate_limit(limit=60, seconds=60)
 def decide_action(
 	action_request: str, decision: str, edited_args: dict | None = None, message: str | None = None
 ) -> dict:
@@ -62,6 +65,7 @@ def get_bootstrap() -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
+@rate_limit(limit=60, seconds=60)
 def upload_attachment(conversation: str | None = None) -> dict:
 	access.require_user()
 	if not frappe.get_cached_doc("AI Assistant Settings").attachments_enabled:
@@ -70,7 +74,7 @@ def upload_attachment(conversation: str | None = None) -> dict:
 	if not upload:
 		frappe.throw(frappe._("No file was uploaded."))
 	conv = conversations.get_or_create(conversation)
-	att = files.create(conv, upload.filename, upload.stream.read())
+	att = files.create(conv, upload.filename, files.read_upload(upload.stream))
 	files.enqueue_processing(att.name)
 	return {
 		"conversation": conv.name,
@@ -88,10 +92,12 @@ def remove_attachment(attachment: str) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
+@rate_limit(limit=30, seconds=60)
 def transcribe(conversation: str | None = None, duration_seconds: float | None = None) -> dict:
 	access.require_user()
 	audio = frappe.request.files.get("audio") if frappe.request else None
 	if not audio:
 		frappe.throw(frappe._("No recording was uploaded."))
 	conv = conversations.get_or_create(conversation)
-	return voice.transcribe(conv, audio.filename or "recording.webm", audio.stream.read(), duration_seconds)
+	data = files.read_upload(audio.stream)
+	return voice.transcribe(conv, audio.filename or "recording.webm", data, duration_seconds)

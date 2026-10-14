@@ -210,3 +210,11 @@ class TestAttachments(IntegrationTestCase):
 			f"select count(*) from `{schema.EMBEDDING_TABLE}` where conversation=%s", conv
 		)[0][0]
 		self.assertEqual(chunks, 0)
+
+
+class TestUploadLimits(IntegrationTestCase):
+	def test_read_upload_stops_at_limit(self):
+		factories.configure(attachments_enabled=1, max_file_size_mb=1)
+		with self.assertRaises(UploadRefusedError):
+			files.read_upload(io.BytesIO(b"a" * (1024 * 1024 + 10)))
+		self.assertEqual(len(files.read_upload(io.BytesIO(b"abc"))), 3)

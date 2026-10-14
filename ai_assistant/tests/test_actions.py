@@ -161,3 +161,30 @@ class TestActions(IntegrationTestCase):
 			frappe.db.get_value("AI Action Request", requests_of(conv)[0].name, "proposed_args")
 		)
 		self.assertEqual(args["name"], todo.name)
+
+
+class TestWriteValidation(IntegrationTestCase):
+	def test_child_rows_cannot_set_system_keys(self):
+		from ai_assistant.tools import preview
+
+		factories.configure()
+		user = factories.assistant_user(roles=("AI Assistant User", "System Manager"))
+		with self.set_user(user):
+			self.assertIsNone(
+				preview.precheck("create_document", {"doctype": "ToDo", "values": {"description": "x"}})
+			)
+			error = preview.precheck(
+				"create_document",
+				{"doctype": "Note", "values": {"title": "x", "seen_by": [{"user": user, "docstatus": 1}]}},
+			)
+		self.assertIn("docstatus", error)
+
+	def test_unknown_top_level_key_refused(self):
+		from ai_assistant.tools import preview
+
+		factories.configure()
+		with self.set_user(factories.assistant_user()):
+			error = preview.precheck(
+				"create_document", {"doctype": "ToDo", "values": {"owner": "Administrator"}}
+			)
+		self.assertIn("owner", error)

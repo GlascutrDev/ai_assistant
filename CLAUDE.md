@@ -56,7 +56,7 @@ Update this diagram whenever you add a DocType, tool, node, middleware, evaluato
 
 - Bench root: `/home/nazmul/Desktop/AROMA`. Run every `bench` command from there. Webserver port 8000, socket.io 9000.
 - Dev site: `today.localhost` (has ERPNext + HRMS). Test site: `today-test.localhost` (`allow_tests` on, Frappe only). **Run tests only on the test site.**
-- The app is not installed yet: `bench --site today.localhost install-app ai_assistant` and the same for `today-test.localhost`.
+- The app is installed on both sites. Python deps are installed in the bench env; the dev-only `langgraph-checkpoint-conformance` is needed for `test_checkpointer`.
 - Frappe `16.51.0`, MariaDB `11.8` (native `VECTOR`), Redis `8.0` (no RediSearch/JSON modules).
 - Python deps go in `pyproject.toml`; install with `bench setup requirements --python` (ask first, it changes the shared env).
 - Bench rules: bare `bench`; always `--site`; never a bare `bench migrate`; `bench start` only in the background and only if it isn't running.
