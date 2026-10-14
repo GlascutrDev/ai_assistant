@@ -688,4 +688,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | Step (§16) | Status |
 |---|---|
 | 1. DocTypes, role, defaults | Done. Password in child rows survives a Settings save (test). Per-user DocTypes grant read to `All`; `has_permission` hooks keep them owner-only (hooks can only deny). |
-| 2–14 | Not started |
+| 2. Registry, Test connection, usage log | Done. Provider kwargs are mapped per provider (`llm/providers.py`), because the LangChain classes use different names. `AI Usage Log.purpose` has an extra `test` value for connection tests. |
+| 3–14 | Not started |

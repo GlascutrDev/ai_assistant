@@ -48,7 +48,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Purpose",
-   "options": "agent\nsummary\ntitle\nembedding\nevaluation\ntranscription"
+   "options": "agent\nsummary\ntitle\nembedding\nevaluation\ntranscription\ntest"
   },
   {
    "fieldname": "column_break_model",

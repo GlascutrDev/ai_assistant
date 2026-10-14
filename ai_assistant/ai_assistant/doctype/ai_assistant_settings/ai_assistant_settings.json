@@ -122,13 +122,13 @@
   {
    "description": "Chat profile that answers every user turn.",
    "fieldname": "main_model",
-   "fieldtype": "Data",
+   "fieldtype": "Autocomplete",
    "label": "Main Model"
   },
   {
    "description": "Chat profile that grades the main model in evaluation runs. Never answers users.",
    "fieldname": "evaluation_model",
-   "fieldtype": "Data",
+   "fieldtype": "Autocomplete",
    "label": "Test/Evaluation Model"
   },
   {
@@ -138,13 +138,13 @@
   {
    "description": "Embedding profile for RAG and large attachments.",
    "fieldname": "embedding_model",
-   "fieldtype": "Data",
+   "fieldtype": "Autocomplete",
    "label": "Embedding Model"
   },
   {
    "description": "Speech-to-text profile for voice prompts and audio files.",
    "fieldname": "speech_model",
-   "fieldtype": "Data",
+   "fieldtype": "Autocomplete",
    "label": "Speech Model"
   },
   {
