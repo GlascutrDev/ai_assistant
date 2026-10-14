@@ -90,3 +90,12 @@ class TestRag(IntegrationTestCase):
 		self.assertTrue(
 			frappe.db.exists("AI Usage Log", {"purpose": "embedding", "profile_id": "fake-embed"})
 		)
+
+
+class TestIndexerDuringMigrate(IntegrationTestCase):
+	def test_no_sources_while_migrating(self):
+		factories.configure(rag_enabled=1, knowledge_sources=[{"source_doctype": "Note", "enabled": 1}])
+		indexer.clear_source_cache()
+		frappe.flags.in_migrate = True
+		self.addCleanup(setattr, frappe.flags, "in_migrate", False)
+		self.assertEqual(indexer.enabled_sources(), set())

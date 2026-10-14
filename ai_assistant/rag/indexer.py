@@ -32,9 +32,18 @@ def on_doc_rename(doc, method=None, old=None, new=None, merge=False):
 
 
 def enabled_sources() -> set[str]:
+	"""DocTypes to index. Empty while installing or migrating: the app's own tables may not exist yet."""
+	flags = frappe.flags
+	if flags.in_install or flags.in_migrate or flags.in_patch or flags.in_setup_wizard:
+		return set()
 	sources = frappe.cache.get_value(SOURCES_KEY)
 	if sources is None:
-		conf = settings.get()
+		try:
+			conf = settings.get()
+		except Exception as e:
+			if not frappe.db.is_table_missing(e):
+				raise
+			return set()
 		sources = []
 		if conf.rag_enabled:
 			sources = [row.source_doctype for row in conf.knowledge_sources if row.enabled]
