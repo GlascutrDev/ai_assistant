@@ -25,6 +25,17 @@ else
 	out+=("- test site $test_site missing. Never run tests on $site.")
 fi
 
+py="$bench_root/env/bin/python"
+if [ -x "$py" ]; then
+	missing=$("$py" - <<'PY' 2>/dev/null
+import importlib.util
+mods = ["langchain", "langgraph", "langsmith", "langchain_openai", "langchain_anthropic", "openevals", "pypdf", "docx", "filetype"]
+print(" ".join(m for m in mods if importlib.util.find_spec(m) is None))
+PY
+)
+	[ -n "$missing" ] && out+=("- Python packages missing in bench env: $missing (add to pyproject.toml; ask before 'bench setup requirements --python')")
+fi
+
 branch=$(git -C "$CLAUDE_PROJECT_DIR" branch --show-current 2>/dev/null)
 dirty=$(git -C "$CLAUDE_PROJECT_DIR" status --porcelain 2>/dev/null | wc -l)
 out+=("- git: branch ${branch:-?}, $dirty changed file(s)")

@@ -7,7 +7,7 @@ Frappe v16 app (Python 3.14). A chat assistant in Desk that acts **as the signed
 ## Architecture
 
 ```
-Desk (any page) ── chat drawer (public/js/ai_assistant.bundle.js) · /app/ai-assistant
+Desk (any page) ── chat drawer (public/js/ai_assistant.bundle.js) · /desk/ai-assistant
    │ mic: MediaRecorder ─► POST api.chat.transcribe ─► speech model ─► editable transcript
    │ files: upload/drag/paste ─► POST api.chat.upload_attachment ─► attachments/processor (queue short)
    │ POST api.chat.send_message / decide_action / cancel_turn     ▲ publish_realtime("ai_assistant_stream",
@@ -155,15 +155,25 @@ Update this diagram whenever you add a DocType, tool, node, middleware, evaluato
 
 ## Claude tooling (`.claude/`)
 
-- `settings.json` hooks: **SessionStart** reports install state on both sites and git state; **after Write/Edit** formats `.py` with ruff 0.14.10.
-- `agents/`, `skills/`, `references/` are empty. Add project agents/skills here as recipes stabilise.
+| Kind | Name | Use for |
+|---|---|---|
+| Skill | `new-tool` · `new-doctype` · `new-endpoint` · `new-provider` · `attachment-type` | the recipes above, step by step |
+| Skill | `eval-case` · `acceptance-test` · `verify` · `spec-sync` | evaluations and model comparison · SPEC §14 coverage · pre-done checks · keeping docs in sync |
+| Agent | `frappe-backend-dev` · `agent-graph-dev` · `desk-chat-ui-dev` | implementation: Frappe server · LangChain/LangGraph/RAG/LangSmith · Desk JS chat |
+| Agent | `security-reviewer` (read-only) · `test-runner` | review against the invariants · run checks with a concise report |
+| Vendored (frappe/skills, see `skills/VENDORED.md`) | `frappe-app-dev` · `frappe-code-review` · `code-style` · `technical-writing` | Frappe reference · generic review · code shape · doc prose |
+| Vendored, user-invoked | `/deep-app-audit apps/ai_assistant` | full audit; required before users outside System Manager get access |
+| Reference | `frappe-v16-patterns.md` · `permission-safe-tools.md` · `langchain-v1-patterns.md` · `mariadb-vector.md` · `multimodal-and-files.md` · `invariants-checklist.md` | verified snippets and the review list |
+
+Hooks (in `settings.json`):
+- **SessionStart:** app install state on both sites, missing Python packages, git state.
+- **After each Write/Edit:** formats `.py` with ruff 0.14.10; flags likely rule violations (permission bypass, hard-coded models, keys, unsafe endpoints, raw HTML in JS) back to Claude without blocking.
 
 ## Gotchas to verify before relying on them
 
-- `frappe.enqueue` keeps the enqueuing user for the job (SPEC §6.5).
-- Password fields in a child table of a Single (SPEC §4.2).
-- `frappe.get_list` aggregate field syntax in v16 (SPEC §7.1).
+Verified facts live in `.claude/references/`. Still open:
+
+- Password values in child rows of the Single survive a Settings save (SPEC §4.2).
 - LangChain/LangGraph wheels and the bench's existing `openai==3.24.0` on Python 3.14.
 - `langsmith.Client` input/output hiding parameters (SPEC §11).
-- `audio.transcriptions.create` signature in the bench's `openai` 3.24.0 (SPEC §6.7).
 - The browser microphone (`getUserMedia`) works only over HTTPS or on `localhost`; `today.localhost` counts as a secure context in Chrome, but production sites need HTTPS.
