@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bench --site today-test.localhost run-tests --app ai_assistant *)",
+      "Bash(bench --site today-test.localhost run-tests --app ai_assistant)",
+      "Bash(bench --site today-test.localhost migrate)",
+      "Bash(bench --site today-test.localhost list-apps)",
+      "Bash(bench --site today.localhost migrate)",
+      "Bash(bench --site today.localhost clear-cache)",
+      "Bash(bench --site today.localhost export-fixtures *)",
+      "Bash(bench --site today.localhost execute *)",
+      "Bash(bench --site today.localhost list-apps)",
+      "Bash(bench build --app ai_assistant)",
+      "Bash(bench version)",
+      "Bash(uvx ruff@0.14.10 *)",
+      "Bash(pre-commit run *)",
+      "Bash(git status *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git diff)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
+    ],
+    "ask": [
+      "Bash(bench --site today.localhost install-app *)",
+      "Bash(bench --site today.localhost uninstall-app *)",
+      "Bash(bench --site today.localhost set-config *)",
+      "Bash(bench --site today.localhost run-tests *)",
+      "Bash(bench --site today-test.localhost install-app *)",
+      "Bash(bench --site today-test.localhost set-config *)",
+      "Bash(bench new-site *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Bash(bench drop-site *)",
+      "Bash(bench --site * drop-site *)",
+      "Bash(bench --site * reinstall *)",
+      "Bash(bench --site * restore *)",
+      "Bash(bench --site * mariadb *)",
+      "Bash(bench --site * set-admin-password *)",
+      "Bash(bench setup production *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Read(./.env)",
+      "Read(./**/site_config.json)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-context.sh 2>/dev/null || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-python.sh 2>/dev/null || true",
+            "timeout": 60,
+            "statusMessage": "Formatting Python with ruff"
+          }
+        ]
+      }
+    ]
+  }
+}
