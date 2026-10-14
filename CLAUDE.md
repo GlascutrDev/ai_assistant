@@ -16,8 +16,8 @@ api/chat.py ─ guard (enabled, role, budget, one turn per thread) ─► frappe
                                                                    ▼
 agent/runner.py run_turn ── observability/tracing.py (LangSmith tracing_context, optional)
    ▼
-agent/graph.py  LangGraph StateGraph
-   intake ─► agent ─► finalize (AI Message, AI Usage Log, title)
+agent/runner.py intake ─► graph ─► finalize (AI Message, AI Action Request, title)
+agent/graph.py  compiled create_agent graph
    agent = create_agent(MAIN model, tools, context_schema=TurnContext, middleware=[
              attachments_inliner · token_budget · Summarization(main) · ModelCallLimit · ToolCallLimit ·
              HumanInTheLoop(every write tool) · usage_recorder])
@@ -171,7 +171,7 @@ Hooks (in `settings.json`):
 
 ## Gotchas
 
-- LangGraph runs checkpoint writes and parallel tool calls in worker threads that share the job's `frappe.db` connection. Hold `persistence.dblock.LOCK` around any DB work that runs inside the graph.
+- LangGraph runs checkpoint writes and tool calls in worker threads; some do not inherit `frappe.local`, and all share the job's DB connection. Wrap any DB work that runs inside the graph in `with dblock.locked():` (it binds `frappe.local` and serializes queries).
 - `frappe.db.sql` decodes the query as UTF-8: pass binary values as hex and `UNHEX()` them.
 - `IntegrationTestCase` rolls back once per class, not per test. Reset Settings with `factories.configure()` in `setUp`, and undo meta changes (property setters) with `addCleanup`.
 

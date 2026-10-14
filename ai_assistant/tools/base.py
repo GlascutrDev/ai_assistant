@@ -8,7 +8,7 @@ from frappe import _
 from frappe.utils import strip_html
 
 from ai_assistant.agent import context as turn
-from ai_assistant.persistence.dblock import LOCK
+from ai_assistant.persistence import dblock
 from ai_assistant.services import audit
 from ai_assistant.tools import serialize
 from ai_assistant.tools.guard import BlockedDocTypeError
@@ -25,7 +25,7 @@ def execute(
 	runtime=None,
 	savepoint: bool = False,
 ) -> dict:
-	with LOCK:
+	with dblock.locked():
 		return _execute(tool_name, body, operation, doctype, name, args, runtime, savepoint)
 
 

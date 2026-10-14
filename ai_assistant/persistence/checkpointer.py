@@ -18,7 +18,7 @@ from langgraph.checkpoint.base import (
 	writes_sort_key,
 )
 
-from ai_assistant.persistence.dblock import LOCK
+from ai_assistant.persistence import dblock
 
 
 class FrappeCheckpointSaver(BaseCheckpointSaver[str]):
@@ -238,7 +238,7 @@ class FrappeCheckpointSaver(BaseCheckpointSaver[str]):
 
 
 def _sql(*args, **kwargs):
-	with LOCK:
+	with dblock.locked():
 		return frappe.db.sql(*args, **kwargs)
 
 

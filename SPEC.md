@@ -324,6 +324,8 @@ Embeddings: OpenAI, Gemini, Mistral, Ollama, or OpenAI-compatible. Anthropic has
 - It must pass `langgraph.checkpoint.conformance` (base capabilities) in a test.
 - The saver writes inside the job's transaction. The job commits once at the end of the turn and once after each interrupt.
 
+**[Decision]** Intake (user message → `HumanMessage`) and finalize (transcript, action requests, title, totals) run in `agent/runner.py` around the compiled `create_agent` graph, not as graph nodes.
+
 ### 6.5 Execution
 1. `api.chat.send_message` validates, inserts the user `AI Message`, sets the conversation to `Running`, and calls `frappe.enqueue("ai_assistant.agent.runner.run_turn", queue="long", conversation=..., job_id=f"ai-turn-{conversation}", deduplicate=True)`. Verified: `enqueue` stores the session user and `execute_job` calls `frappe.set_user(user)` (`frappe/utils/background_jobs.py`), so the job runs as the enqueuing user.
 2. `run_turn` asserts the session user owns the conversation, opens the LangSmith context (§11), and streams the graph with `stream_mode=["messages", "updates"]`.
@@ -691,4 +693,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | 2. Registry, Test connection, usage log | Done. Provider kwargs are mapped per provider (`llm/providers.py`), because the LangChain classes use different names. `AI Usage Log.purpose` has an extra `test` value for connection tests. |
 | 3. Guard, meta and read tools, audit | Done. AC03–AC06 pass with direct tool calls. Filter, field, group-by, and order-by names are checked against readable fields. |
 | 4. FrappeCheckpointSaver | Done. Passes the base conformance suite (AC14). Blobs go in as hex; a process lock serializes DB use from LangGraph worker threads. |
-| 5–14 | Not started |
+| 5. Graph, runner, streaming, API | Done. **[Decision]** The graph is the compiled `create_agent` graph; intake and finalize are runner steps (DB writes stay in the job's transaction, no nested checkpoint namespaces). Usage is recorded by a callback, so summary calls are counted too. |
+| 6–14 | Not started |
