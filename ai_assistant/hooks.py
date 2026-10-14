@@ -24,3 +24,7 @@ permission_query_conditions = {
 	"AI Action Request": "ai_assistant.permissions.action_request_query",
 	"AI Usage Log": "ai_assistant.permissions.usage_log_query",
 }
+
+scheduler_events = {
+	"hourly": ["ai_assistant.tasks.expire_action_requests"],
+}

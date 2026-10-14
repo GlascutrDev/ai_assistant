@@ -32,7 +32,7 @@ def decide_action(
 def cancel_turn(conversation: str) -> dict:
 	access.require_user()
 	conv = conversations.load_own(conversation)
-	runner.request_cancel(conv.name)
+	runner.cancel(conv)
 	return {"conversation": conv.name}
 
 

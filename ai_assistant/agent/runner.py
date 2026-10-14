@@ -7,6 +7,7 @@ from frappe import _
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.types import Command
 
+from ai_assistant import tools
 from ai_assistant.agent import graph, transcript
 from ai_assistant.agent.context import TurnContext
 from ai_assistant.agent.middleware import UsageRecorder
@@ -40,8 +41,10 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 		if conv.context_doctype
 		else None,
 	)
-	graph_input = Command(resume=resume) if resume else {"messages": [user_input(message)]}
 	try:
+		if message:
+			_close_open_interrupt(ctx)
+		graph_input = Command(resume=resume) if resume else {"messages": [user_input(message)]}
 		result = execute(ctx, graph_input, publisher)
 		finalize(conv, ctx, result, publisher, first_message=message)
 	except (BudgetExceededError, ModelNotConfiguredError) as e:
@@ -50,6 +53,15 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 		frappe.log_error(f"AI Assistant turn failed ({conv.name})")
 		fail(conv.name, publisher, _(PROVIDER_ERROR))
 	_commit()
+
+
+def cancel(conv):
+	"""Stop a running turn, or reject the writes waiting for confirmation."""
+	if conv.status == "Waiting for confirmation":
+		actions.reject_open(conv.name, _("Cancelled by the user."))
+		conversations.set_status(conv.name, "Active")
+	else:
+		request_cancel(conv.name)
 
 
 def execute(
@@ -93,25 +105,28 @@ def execute(
 def finalize(
 	conv, ctx: TurnContext, result: TurnResult, publisher: Publisher, first_message: str | None = None
 ):
+	resume_now = False
 	with dblock.locked():
 		transcript.persist(conv.name, result.messages, ctx.model_profile)
 		transcript.add_usage(conv.name, result.usage, ctx.model_profile)
+		actions.record_results(conv.name, [m for m in result.messages if isinstance(m, ToolMessage)])
 		if result.cancelled:
 			conversations.add_message(conv.name, "system_note", _("Stopped."))
 			status = "Active"
 		elif result.interrupts:
-			cards = [
-				card
-				for interrupt in result.interrupts
-				for card in actions.create_from_interrupt(conv.name, interrupt)
-			]
-			publisher.confirmation(cards)
+			cards = _action_cards(conv.name, result)
 			status = "Waiting for confirmation"
+			resume_now = not any(card["status"] == "Pending" for card in cards)
+			if not resume_now:
+				publisher.confirmation(cards)
 		else:
 			status = "Active"
 		conversations.set_status(conv.name, status)
 		if not conv.title and first_message:
 			transcript.set_title(conv.name, first_message, ctx.model_profile)
+	if resume_now:
+		actions.resume_if_complete(conv.name, result.interrupts[-1].id)
+		return
 	publisher.done(status)
 
 
@@ -120,6 +135,33 @@ def fail(conversation: str, publisher: Publisher, message: str):
 		conversations.add_message(conversation, "system_note", message)
 		conversations.set_status(conversation, "Active")
 	publisher.error(message)
+
+
+def _action_cards(conversation: str, result: TurnResult) -> list[dict]:
+	write_names = tools.write_tool_names()
+	calls = next(
+		(m.tool_calls for m in reversed(result.messages) if isinstance(m, AIMessage) and m.tool_calls), []
+	)
+	call_ids = [c["id"] for c in calls if c["name"] in write_names]
+	return [
+		card for i in result.interrupts for card in actions.create_from_interrupt(conversation, i, call_ids)
+	]
+
+
+def _close_open_interrupt(ctx: TurnContext):
+	"""A new message on a thread with an undecided interrupt rejects that interrupt first."""
+	agent = graph.build(ctx)
+	state = agent.get_state({"configurable": {"thread_id": ctx.conversation}})
+	if not state.interrupts:
+		return
+	actions.reject_open(ctx.conversation, _("The user sent a new message instead."))
+	count = len(state.interrupts[-1].value.get("action_requests", []))
+	reject = {"type": "reject", "message": _("The user sent a new message instead of deciding.")}
+	stale = execute(ctx, Command(resume={"decisions": [reject] * count}))
+	with dblock.locked():
+		transcript.persist(
+			ctx.conversation, [m for m in stale.messages if isinstance(m, ToolMessage)], ctx.model_profile
+		)
 
 
 def user_input(message: str) -> HumanMessage:

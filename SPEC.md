@@ -694,4 +694,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | 3. Guard, meta and read tools, audit | Done. AC03–AC06 pass with direct tool calls. Filter, field, group-by, and order-by names are checked against readable fields. |
 | 4. FrappeCheckpointSaver | Done. Passes the base conformance suite (AC14). Blobs go in as hex; a process lock serializes DB use from LangGraph worker threads. |
 | 5. Graph, runner, streaming, API | Done. **[Decision]** The graph is the compiled `create_agent` graph; intake and finalize are runner steps (DB writes stay in the job's transaction, no nested checkpoint namespaces). Usage is recorded by a callback, so summary calls are counted too. |
-| 6–14 | Not started |
+| 6. Write tools, HITL, action requests | Done. AC07–AC13, AC22, AC23 pass. A write that fails its pre-check is stored as Failed and auto-rejected with the reason. A new message on a thread with an expired or cancelled interrupt rejects that interrupt first. `AI Action Request.tool_call_id` links a request to its tool result. |
+| 7–14 | Not started |

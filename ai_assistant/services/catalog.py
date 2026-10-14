@@ -20,6 +20,10 @@ def doctypes() -> list[dict]:
 	return rows
 
 
+def is_doctype(name) -> bool:
+	return isinstance(name, str) and bool(name) and bool(frappe.db.exists("DocType", name))
+
+
 def readable_fields(doctype: str, parenttype: str | None = None) -> dict:
 	"""Fields the session user may read at their permlevels, minus Password, hidden, and layout fields."""
 	meta = frappe.get_meta(doctype)

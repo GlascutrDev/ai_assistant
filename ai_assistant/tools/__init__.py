@@ -3,6 +3,16 @@
 from ai_assistant.tools.meta import describe_doctype, find_doctypes
 from ai_assistant.tools.read import aggregate, count_documents, get_document, list_documents, search_links
 from ai_assistant.tools.reports import run_report
+from ai_assistant.tools.write import (
+	add_comment,
+	apply_workflow_action,
+	assign_to,
+	cancel_document,
+	create_document,
+	delete_document,
+	submit_document,
+	update_document,
+)
 
 READ_TOOLS = [
 	find_doctypes,
@@ -15,7 +25,16 @@ READ_TOOLS = [
 	search_links,
 ]
 
-WRITE_TOOLS = []
+WRITE_TOOLS = [
+	create_document,
+	update_document,
+	submit_document,
+	cancel_document,
+	delete_document,
+	add_comment,
+	assign_to,
+	apply_workflow_action,
+]
 
 
 def for_turn(read_only: bool = False) -> list:
