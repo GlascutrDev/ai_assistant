@@ -28,3 +28,6 @@ permission_query_conditions = {
 scheduler_events = {
 	"hourly": ["ai_assistant.tasks.expire_action_requests"],
 }
+
+app_include_js = "ai_assistant.bundle.js"
+app_include_css = "ai_assistant.bundle.css"

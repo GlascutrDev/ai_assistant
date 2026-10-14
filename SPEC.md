@@ -696,4 +696,5 @@ Tests use a fake chat model (`tests/fake_llm.py`, scripted tool calls) and a fak
 | 5. Graph, runner, streaming, API | Done. **[Decision]** The graph is the compiled `create_agent` graph; intake and finalize are runner steps (DB writes stay in the job's transaction, no nested checkpoint namespaces). Usage is recorded by a callback, so summary calls are counted too. |
 | 6. Write tools, HITL, action requests | Done. AC07–AC13, AC22, AC23 pass. A write that fails its pre-check is stored as Failed and auto-rejected with the reason. A new message on a thread with an expired or cancelled interrupt rejects that interrupt first. `AI Action Request.tool_call_id` links a request to its tool result. |
 | 7. Limits, summarization, model switch | Done. AC15–AC18, AC25 pass. Summarization keeps the last 10 messages. The context-window check runs before each model call. |
-| 8–14 | Not started |
+| 8. Desk chat drawer and full page | Done. Launcher button and drawer on every Desk page (Ctrl+I), full page at `/desk/ai-assistant/<conversation>`. One `ChatPanel` class serves both; attachments and voice plug in as panel extensions. Not yet checked in a browser. |
+| 9–14 | Not started |
