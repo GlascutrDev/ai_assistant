@@ -24,6 +24,7 @@ dependencies = [
     "python-docx",
     "pillow",
     "filetype",
+    "websockets~=15.0.1",  # langgraph-sdk needs websockets.sync (>=11); matches Frappe
 ]
 
 [build-system]
