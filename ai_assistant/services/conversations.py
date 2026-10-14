@@ -84,7 +84,7 @@ def _attachments_for(conv, names: list[str] | None) -> list[str]:
 
 def enqueue_turn(conversation: str, **kwargs):
 	frappe.enqueue(
-		"ai_assistant.agent.runner.run_turn",
+		"ai_assistant.agent.jobs.run_turn",
 		queue="long",
 		timeout=1800,
 		job_id=f"ai-turn-{conversation}",

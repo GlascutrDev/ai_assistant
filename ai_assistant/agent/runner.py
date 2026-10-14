@@ -51,10 +51,32 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 		finalize(conv, ctx, result, publisher, first_message=message)
 	except (BudgetExceededError, ModelNotConfiguredError, ConversationTooLongError) as e:
 		fail(conv.name, publisher, str(e))
-	except Exception:
+	except Exception as e:
 		frappe.log_error(f"AI Assistant turn failed ({conv.name})")
-		fail(conv.name, publisher, _(PROVIDER_ERROR))
+		fail(conv.name, publisher, provider_message(e))
 	_commit()
+
+
+PROVIDER_HINTS = (
+	(
+		("credit balance", "insufficient_quota", "credit_balance", "billing"),
+		"The AI provider account has no credit left. Ask your administrator to add credit.",
+	),
+	(
+		("authentication", "invalid x-api-key", "invalid api key", "incorrect api key", "401"),
+		"The AI provider rejected the API key. Ask your administrator to check it.",
+	),
+	(("rate limit", "rate_limit", "429", "overloaded"), "The AI provider is busy. Try again in a minute."),
+)
+
+
+def provider_message(error: Exception) -> str:
+	"""A user-facing reason for a failed model call. Never includes the error text itself."""
+	text = f"{type(error).__name__} {error}".lower()
+	for needles, message in PROVIDER_HINTS:
+		if any(n in text for n in needles):
+			return _(message)
+	return _(PROVIDER_ERROR)
 
 
 def cancel(conv):

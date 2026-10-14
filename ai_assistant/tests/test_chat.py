@@ -157,3 +157,36 @@ class TestJsonArguments(IntegrationTestCase):
 		factories.configure()
 		with self.set_user(factories.assistant_user()), self.assertRaises(frappe.ValidationError):
 			chat.send_message(text="hi", context="[1, 2]")
+
+
+class TestJobLoadFailure(IntegrationTestCase):
+	def test_turn_that_cannot_load_ends_with_note(self):
+		import builtins
+		from unittest.mock import patch
+
+		from ai_assistant.agent import jobs
+
+		factories.configure()
+		user = factories.assistant_user()
+		with self.set_user(user):
+			conv = conversations.get_or_create(None)
+			real_import = builtins.__import__
+
+			def failing_import(name, *args, **kwargs):
+				if name == "ai_assistant.agent" and args and args[2] and "runner" in args[2]:
+					raise ImportError("broken dependency")
+				return real_import(name, *args, **kwargs)
+
+			with patch("builtins.__import__", side_effect=failing_import):
+				jobs.run_turn(conv.name)
+		self.assertEqual(frappe.db.get_value("AI Conversation", conv.name, "status"), "Active")
+		self.assertEqual(roles_of(conv.name), ["system_note"])
+
+
+class TestProviderMessages(IntegrationTestCase):
+	def test_credit_error_is_explained(self):
+		from ai_assistant.agent.runner import provider_message
+
+		self.assertIn("no credit", provider_message(RuntimeError("Your credit balance is too low")))
+		self.assertIn("API key", provider_message(RuntimeError("Error code: 401 invalid x-api-key")))
+		self.assertIn("not responding", provider_message(RuntimeError("boom")))
