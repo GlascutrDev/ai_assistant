@@ -43,3 +43,13 @@ doc_events = {
 
 app_include_js = "ai_assistant.bundle.js"
 app_include_css = "ai_assistant.bundle.css"
+
+add_to_apps_screen = [
+	{
+		"name": "ai_assistant",
+		"logo": "/assets/ai_assistant/images/ai-assistant-logo.svg",
+		"title": "AI Assistant",
+		"route": "/desk/ai-hub",
+		"has_permission": "ai_assistant.services.access.has_app_permission",
+	}
+]

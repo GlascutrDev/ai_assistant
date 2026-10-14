@@ -33,3 +33,11 @@ def require_user() -> str:
 
 def is_admin(user: str | None = None) -> bool:
 	return "System Manager" in frappe.get_roles(user or frappe.session.user)
+
+
+def has_app_permission() -> bool:
+	"""Show the app on the apps screen to users who may use the assistant."""
+	try:
+		return has_access() and bool(settings.get().enabled or is_admin())
+	except Exception:
+		return False

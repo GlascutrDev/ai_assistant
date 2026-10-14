@@ -1,0 +1,190 @@
+{
+ "app": "ai_assistant",
+ "charts": [],
+ "content": "[{\"id\": \"aih01\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Your AI Assistant</b></span>\", \"col\": 12}}, {\"id\": \"aih02\", \"type\": \"paragraph\", \"data\": {\"text\": \"Ask about your data, prepare changes for your approval, and search the company knowledge base. The assistant sees and does only what you can.\", \"col\": 12}}, {\"id\": \"aisc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Open Chat\", \"col\": 3}}, {\"id\": \"aisc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"My Conversations\", \"col\": 3}}, {\"id\": \"aisc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Knowledge Documents\", \"col\": 3}}, {\"id\": \"aisc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Usage Summary\", \"col\": 3}}, {\"id\": \"aisc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Settings\", \"col\": 3}}, {\"id\": \"aih03\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"aih04\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\", \"col\": 12}}, {\"id\": \"aicd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Chat\", \"col\": 4}}, {\"id\": \"aicd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Knowledge\", \"col\": 4}}, {\"id\": \"aicd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Activity & Usage\", \"col\": 4}}, {\"id\": \"aicd3\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}]",
+ "creation": "2026-10-14 12:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "sparkles",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "AI Hub",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Chat",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Assistant",
+   "link_count": 0,
+   "link_to": "ai-assistant",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Conversation",
+   "link_count": 0,
+   "link_to": "AI Conversation",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Action Request",
+   "link_count": 0,
+   "link_to": "AI Action Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Knowledge",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Knowledge Document",
+   "link_count": 0,
+   "link_to": "AI Knowledge Document",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Activity & Usage",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "AI Usage Summary",
+   "link_count": 0,
+   "link_to": "AI Usage Summary",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Usage Log",
+   "link_count": 0,
+   "link_to": "AI Usage Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Audit Log",
+   "link_count": 0,
+   "link_to": "AI Audit Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Evaluation Run",
+   "link_count": 0,
+   "link_to": "AI Evaluation Run",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "AI Assistant Settings",
+   "link_count": 0,
+   "link_to": "AI Assistant Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Hub",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 30.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Open Chat",
+   "link_to": "ai-assistant",
+   "type": "Page"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "label": "My Conversations",
+   "link_to": "AI Conversation",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Knowledge Documents",
+   "link_to": "AI Knowledge Document",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "label": "Usage Summary",
+   "link_to": "AI Usage Summary",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "label": "Settings",
+   "link_to": "AI Assistant Settings",
+   "type": "DocType"
+  }
+ ],
+ "standard": 1,
+ "title": "AI Hub",
+ "type": "Workspace"
+}

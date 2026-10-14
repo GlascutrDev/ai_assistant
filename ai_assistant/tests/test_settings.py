@@ -68,3 +68,16 @@ class TestAccess(IntegrationTestCase):
 		with self.set_user(other):
 			self.assertFalse(frappe.has_permission("AI Conversation", "read", conv.name))
 			self.assertEqual(frappe.get_list("AI Conversation", filters={"name": conv.name}), [])
+
+
+class TestAppsScreen(IntegrationTestCase):
+	def test_app_shown_only_to_assistant_users(self):
+		factories.configure()
+		with self.set_user(factories.assistant_user()):
+			self.assertTrue(access.has_app_permission())
+		with self.set_user(factories.assistant_user(roles=(factories.role(),))):
+			self.assertFalse(access.has_app_permission())
+
+	def test_workspace_and_sidebar_installed(self):
+		self.assertTrue(frappe.db.exists("Workspace", "AI Hub"))
+		self.assertTrue(frappe.db.exists("Sidebar", "AI Assistant"))

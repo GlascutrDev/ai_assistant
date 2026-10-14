@@ -1,0 +1,20 @@
+{
+ "app": "ai_assistant",
+ "creation": "2026-10-14 12:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 0,
+ "label": "AI Assistant",
+ "link": "/desk/ai-hub",
+ "link_type": "External",
+ "logo_url": "/assets/ai_assistant/images/ai-assistant-logo.svg",
+ "modified": "2026-10-14 12:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "AI Assistant",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}

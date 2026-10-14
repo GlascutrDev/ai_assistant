@@ -54,6 +54,7 @@ Other settings:
 
 ### Using the assistant
 
+- Open **AI Assistant** from the apps screen to reach the **AI Hub** workspace: chat, conversations, knowledge documents, usage, and settings in one place.
 - Click the round button at the bottom right of any Desk page, or press **Ctrl+I**. Open the full page at **/desk/ai-assistant** for a larger view and your conversation list.
 - When a form is open, the assistant knows which record you mean by "this".
 - Answers link to the records they mention.
