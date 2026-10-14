@@ -15,3 +15,10 @@ def reindex_changed_sources():
 
 	indexer.reindex_changed_sources()
 	frappe.db.commit()
+
+
+def purge_old_conversations():
+	from ai_assistant.services import attachments
+
+	attachments.purge_old()
+	frappe.db.commit()

@@ -4,6 +4,7 @@ import frappe
 
 from ai_assistant.agent import runner
 from ai_assistant.services import access, actions, bootstrap, conversations
+from ai_assistant.services import attachments as files
 
 
 @frappe.whitelist(methods=["POST"])
@@ -58,3 +59,29 @@ def archive_conversation(conversation: str) -> dict:
 @frappe.whitelist(methods=["GET"])
 def get_bootstrap() -> dict:
 	return bootstrap.get()
+
+
+@frappe.whitelist(methods=["POST"])
+def upload_attachment(conversation: str | None = None) -> dict:
+	access.require_user()
+	if not frappe.get_cached_doc("AI Assistant Settings").attachments_enabled:
+		frappe.throw(frappe._("Attachments are not enabled."))
+	upload = frappe.request.files.get("file") if frappe.request else None
+	if not upload:
+		frappe.throw(frappe._("No file was uploaded."))
+	conv = conversations.get_or_create(conversation)
+	att = files.create(conv, upload.filename, upload.stream.read())
+	files.enqueue_processing(att.name)
+	return {
+		"conversation": conv.name,
+		"attachment": att.name,
+		"status": att.status,
+		"file_name": att.file_name,
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def remove_attachment(attachment: str) -> dict:
+	access.require_user()
+	files.remove(attachment)
+	return {"attachment": attachment}

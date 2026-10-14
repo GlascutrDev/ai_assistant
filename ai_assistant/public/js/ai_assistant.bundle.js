@@ -1,11 +1,12 @@
 import { api } from "./chat/api";
 import { ChatDrawer } from "./chat/drawer";
+import { FilesExtension } from "./chat/files";
 import { ChatPanel } from "./chat/panel";
 
 frappe.provide("ai_assistant");
 ai_assistant.ChatPanel = ChatPanel;
 ai_assistant.api = api;
-ai_assistant.extensions = [];
+ai_assistant.extensions = [() => new FilesExtension()];
 
 $(document).on("app_ready", async () => {
 	if (frappe.session.user === "Guest") return;

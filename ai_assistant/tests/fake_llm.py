@@ -95,3 +95,12 @@ def use_models(chat: dict | None = None, embeddings: Embeddings | None = None):
 	):
 		yield
 	registry.clear_cache()
+
+
+class FakeRuntime:
+	"""Stands in for ToolRuntime when a test calls a conversation-scoped tool directly."""
+
+	def __init__(self, user: str, conversation: str):
+		from ai_assistant.agent.context import TurnContext
+
+		self.context = TurnContext(user=user, conversation=conversation)

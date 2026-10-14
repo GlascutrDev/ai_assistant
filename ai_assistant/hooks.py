@@ -27,7 +27,10 @@ permission_query_conditions = {
 
 scheduler_events = {
 	"hourly": ["ai_assistant.tasks.expire_action_requests"],
-	"daily": ["ai_assistant.tasks.reindex_changed_sources"],
+	"daily": [
+		"ai_assistant.tasks.purge_old_conversations",
+		"ai_assistant.tasks.reindex_changed_sources",
+	],
 }
 
 doc_events = {

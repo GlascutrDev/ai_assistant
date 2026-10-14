@@ -45,9 +45,12 @@ def get_or_create(name: str | None, context: dict | None = None):
 
 def start_turn(conv, text: str, attachments: list[str] | None = None, voice_attachment: str | None = None):
 	"""Insert the user message and enqueue the turn. One turn per conversation at a time."""
-	if attachments or voice_attachment:
-		frappe.throw(_("Attachments are not enabled."))
+	attachments = _attachments_for(conv, attachments)
 	input_mode = "voice" if voice_attachment else "text"
+	if voice_attachment:
+		from ai_assistant.services import voice
+
+		voice.check_for_message(conv, voice_attachment)
 	text = (text or "").strip()
 	if not text:
 		frappe.throw(_("Write a message first."))
@@ -60,9 +63,23 @@ def start_turn(conv, text: str, attachments: list[str] | None = None, voice_atta
 		frappe.throw(_("This conversation is archived. Start a new one."))
 	budget.assert_available()
 	message = add_message(conv.name, "user", text, input_mode=input_mode, attachments=attachments)
+	if attachments:
+		from ai_assistant.services import attachments as files
+
+		files.mark_sent(attachments)
 	set_status(conv.name, "Running")
 	enqueue_turn(conv.name, message=message.name)
 	return message
+
+
+def _attachments_for(conv, names: list[str] | None) -> list[str]:
+	if not names:
+		return []
+	if not settings.get().attachments_enabled:
+		frappe.throw(_("Attachments are not enabled."))
+	from ai_assistant.services import attachments as files
+
+	return files.for_message(conv, names)
 
 
 def enqueue_turn(conversation: str, **kwargs):

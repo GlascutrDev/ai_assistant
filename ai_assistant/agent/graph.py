@@ -10,6 +10,7 @@ from langchain.agents.middleware import (
 
 from ai_assistant import tools
 from ai_assistant.agent import middleware, prompts
+from ai_assistant.agent.attachments import attachments_inliner
 from ai_assistant.agent.context import TurnContext
 from ai_assistant.llm import registry
 from ai_assistant.persistence.checkpointer import FrappeCheckpointSaver
@@ -22,9 +23,12 @@ def build(ctx: TurnContext, attachments: list[dict] | None = None):
 	"""The agent for this turn. `ctx.model_profile` is the main model, or the target in an evaluation."""
 	conf = settings.get()
 	model = registry.get_chat_model(ctx.model_profile)
-	turn_tools = tools.for_turn(read_only=bool(conf.read_only_mode), rag=bool(conf.rag_enabled))
+	turn_tools = tools.for_turn(
+		read_only=bool(conf.read_only_mode), rag=bool(conf.rag_enabled), files=bool(conf.attachments_enabled)
+	)
 	write_names = {t.name for t in turn_tools} & tools.write_tool_names()
 	stack = [
+		attachments_inliner,
 		middleware.token_budget,
 		SummarizationMiddleware(
 			model=model, trigger=("tokens", summarize_at(ctx.model_profile)), keep=("messages", 10)

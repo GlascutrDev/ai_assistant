@@ -122,7 +122,7 @@ def answer(inputs: dict, target_model: str) -> dict:
 	)
 	messages, proposed, input_tokens, output_tokens, cost = [], [], 0, 0.0, 0.0
 	graph_input = {"messages": [HumanMessage(content=inputs["question"])]}
-	for _ in range(MAX_RESUMES + 1):
+	for _attempt in range(MAX_RESUMES + 1):
 		result = turn_runner.execute(ctx, graph_input, purpose="evaluation")
 		messages += result.messages
 		input_tokens += result.usage.input_tokens
