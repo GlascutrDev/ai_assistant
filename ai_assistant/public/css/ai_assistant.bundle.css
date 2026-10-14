@@ -189,3 +189,24 @@
 		display: none;
 	}
 }
+.ai-thinking {
+	padding: 2px 4px;
+}
+.ai-dots::after {
+	content: "";
+	animation: ai-dots 1.2s steps(4, end) infinite;
+}
+@keyframes ai-dots {
+	0% {
+		content: "";
+	}
+	25% {
+		content: ".";
+	}
+	50% {
+		content: "..";
+	}
+	75% {
+		content: "...";
+	}
+}

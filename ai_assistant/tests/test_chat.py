@@ -190,3 +190,31 @@ class TestProviderMessages(IntegrationTestCase):
 		self.assertIn("no credit", provider_message(RuntimeError("Your credit balance is too low")))
 		self.assertIn("API key", provider_message(RuntimeError("Error code: 401 invalid x-api-key")))
 		self.assertIn("not responding", provider_message(RuntimeError("boom")))
+
+
+class TestStreaming(IntegrationTestCase):
+	def test_answer_is_streamed_in_pieces(self):
+		from unittest.mock import patch
+
+		from ai_assistant.agent import stream
+
+		factories.configure()
+		user = factories.assistant_user()
+		answer = "Here is a longer answer that arrives one word at a time."
+		events = []
+		with (
+			patch.object(stream, "TOKEN_INTERVAL", 0),
+			patch.object(
+				stream.frappe,
+				"publish_realtime",
+				side_effect=lambda event, msg, **kw: event == stream.EVENT and events.append(msg),
+			),
+			fake_llm.use_models(chat={"fake-main": fake_llm.fake_chat(answer, "Title")}),
+			self.set_user(user),
+		):
+			result = chat.send_message(text="hi")
+		tokens = [e["text"] for e in events if e["type"] == "token"]
+		self.assertGreater(len(tokens), 3)
+		self.assertEqual("".join(tokens), answer)
+		self.assertTrue(all(e["conversation"] == result["conversation"] for e in events))
+		self.assertEqual(events[-1]["type"], "done")

@@ -1,6 +1,7 @@
 """Scripted chat model and deterministic embeddings. No test calls a real provider (rule 14)."""
 
 import hashlib
+import json
 import math
 import re
 from contextlib import contextmanager
@@ -8,8 +9,8 @@ from unittest.mock import patch
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 
 class FakeChatModel(BaseChatModel):
@@ -44,6 +45,27 @@ class FakeChatModel(BaseChatModel):
 		if not response.usage_metadata:
 			response.usage_metadata = {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15}
 		return ChatResult(generations=[ChatGeneration(message=response)])
+
+	def _stream(self, messages, stop=None, run_manager=None, **kwargs):
+		"""Word by word, like a real provider; tool calls arrive in one chunk."""
+		message = self._generate(messages, stop=stop, **kwargs).generations[0].message
+		if message.tool_calls:
+			chunks = [
+				AIMessageChunk(
+					content="",
+					tool_call_chunks=[
+						{"name": c["name"], "args": json.dumps(c["args"]), "id": c["id"], "index": i}
+						for i, c in enumerate(message.tool_calls)
+					],
+				)
+			]
+		else:
+			chunks = [AIMessageChunk(content=w) for w in re.split(r"(?<=\s)", message.text) if w]
+		chunks[-1].usage_metadata = message.usage_metadata
+		for chunk in chunks:
+			if run_manager and chunk.content:
+				run_manager.on_llm_new_token(chunk.content, chunk=ChatGenerationChunk(message=chunk))
+			yield ChatGenerationChunk(message=chunk)
 
 
 def fake_chat(*responses, name: str = "fake", raise_error: bool = False) -> FakeChatModel:

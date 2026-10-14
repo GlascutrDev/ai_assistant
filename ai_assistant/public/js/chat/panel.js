@@ -105,18 +105,37 @@ export class ChatPanel {
 		this.$messages.find(".ai-empty").remove();
 		this.$messages.append(render.message({ role: "user", content: text, input_mode: extra.voice_attachment ? "voice" : "text" }));
 		this.$input.val("");
-		this.scroll();
+		this.stream_text = "";
+		this.show_thinking(true);
+		this.early_events = this.conversation ? null : [];
 		try {
 			const r = await api.send({ text, conversation: this.conversation, context: this.desk_context(), ...extra });
 			this.extensions.forEach((x) => x.sent?.());
 			if (!this.conversation) {
 				this.conversation = r.conversation;
 				this.on_conversation?.({ name: r.conversation });
+				const early = this.early_events || [];
+				this.early_events = null;
+				early.forEach((data) => this.on_event(data));
 			}
 		} catch (e) {
+			this.early_events = null;
+			this.show_thinking(false);
 			this.set_busy(false);
 			this.$input.val(text);
 			if (this.conversation) this.load(this.conversation);
+		}
+	}
+
+	show_thinking(on) {
+		this.$messages.find(".ai-thinking").remove();
+		if (on) {
+			this.$messages.append(
+				$(`<div class="ai-thinking text-muted small"><span class="ai-dots"></span></div>`).prepend(
+					document.createTextNode(__("Thinking"))
+				)
+			);
+			this.scroll();
 		}
 	}
 
@@ -125,12 +144,20 @@ export class ChatPanel {
 	}
 
 	on_event(data) {
-		if (!data || data.conversation !== this.conversation) return;
+		if (!data) return;
+		if (!this.conversation && this.early_events) {
+			this.early_events.push(data);
+			return;
+		}
+		if (data.conversation !== this.conversation) return;
 		if (data.type === "token") {
+			this.show_thinking(false);
 			this.stream_text += data.text;
 			this.streaming_bubble().empty().append(render.markdown(this.stream_text));
 		} else if (data.type === "step") {
+			this.end_stream_bubble();
 			this.$messages.append(render.tool_step(data.tool, null));
+			this.show_thinking(true);
 		} else if (data.type === "tool_result") {
 			this.$messages.find(`.ai-step[data-tool="${CSS.escape(data.tool)}"]`).last().replaceWith(render.tool_step(data.tool, data.status));
 		} else if (data.type === "confirmation" || data.type === "done" || data.type === "error") {
@@ -140,6 +167,11 @@ export class ChatPanel {
 			this.extensions.forEach((x) => x.on_status?.(data));
 		}
 		this.scroll();
+	}
+
+	end_stream_bubble() {
+		this.$messages.find(".ai-streaming").removeClass("ai-streaming");
+		this.stream_text = "";
 	}
 
 	streaming_bubble() {
