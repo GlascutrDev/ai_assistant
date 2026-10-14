@@ -77,9 +77,12 @@ class FakeEmbeddings(Embeddings):
 
 
 @contextmanager
-def use_models(chat: dict | None = None, embeddings: Embeddings | None = None):
-	"""Patch the registry: `chat` maps profile_id → FakeChatModel."""
+def use_models(
+	chat: dict | None = None, embeddings: Embeddings | None = None, speech: str = "fake transcript"
+):
+	"""Patch the registry: `chat` maps profile_id → FakeChatModel; speech returns `speech`."""
 	from ai_assistant.llm import registry
+	from ai_assistant.llm import speech as speech_module
 
 	chat = chat or {}
 
@@ -92,6 +95,7 @@ def use_models(chat: dict | None = None, embeddings: Embeddings | None = None):
 	with (
 		patch.object(registry, "_build_chat", side_effect=build_chat),
 		patch.object(registry, "_build_embeddings", side_effect=lambda p, c: embeddings or FakeEmbeddings()),
+		patch.object(speech_module, "_transcribe", side_effect=lambda *a: speech),
 	):
 		yield
 	registry.clear_cache()

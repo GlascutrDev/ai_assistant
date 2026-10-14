@@ -12,10 +12,11 @@ export const api = {
 	cancel: (conversation) => post("cancel_turn", { conversation }),
 	archive: (conversation) => post("archive_conversation", { conversation }),
 	remove_attachment: (attachment) => post("remove_attachment", { attachment }),
-	upload(conversation, file, field = "file", method = "upload_attachment") {
+	upload(conversation, file, field = "file", method = "upload_attachment", extra = {}) {
 		const form = new FormData();
 		form.append(field, file, file.name || "recording.webm");
 		if (conversation) form.append("conversation", conversation);
+		Object.entries(extra).forEach(([key, value]) => form.append(key, value));
 		return fetch(`/api/method/${CHAT}${method}`, {
 			method: "POST",
 			headers: { "X-Frappe-CSRF-Token": frappe.csrf_token, Accept: "application/json" },

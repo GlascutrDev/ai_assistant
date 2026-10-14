@@ -3,7 +3,7 @@
 import frappe
 
 from ai_assistant.agent import runner
-from ai_assistant.services import access, actions, bootstrap, conversations
+from ai_assistant.services import access, actions, bootstrap, conversations, voice
 from ai_assistant.services import attachments as files
 
 
@@ -85,3 +85,13 @@ def remove_attachment(attachment: str) -> dict:
 	access.require_user()
 	files.remove(attachment)
 	return {"attachment": attachment}
+
+
+@frappe.whitelist(methods=["POST"])
+def transcribe(conversation: str | None = None, duration_seconds: float | None = None) -> dict:
+	access.require_user()
+	audio = frappe.request.files.get("audio") if frappe.request else None
+	if not audio:
+		frappe.throw(frappe._("No recording was uploaded."))
+	conv = conversations.get_or_create(conversation)
+	return voice.transcribe(conv, audio.filename or "recording.webm", audio.stream.read(), duration_seconds)
