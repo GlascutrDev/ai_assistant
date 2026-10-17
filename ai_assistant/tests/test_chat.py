@@ -203,7 +203,6 @@ class TestStreaming(IntegrationTestCase):
 		answer = "Here is a longer answer that arrives one word at a time."
 		events = []
 		with (
-			patch.object(stream, "TOKEN_INTERVAL", 0),
 			patch.object(
 				stream.frappe,
 				"publish_realtime",

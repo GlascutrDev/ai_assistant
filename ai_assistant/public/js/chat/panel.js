@@ -3,6 +3,7 @@ import * as render from "./render";
 
 // Frappe's socket gives up after 3 reconnect attempts (e.g. across a bench restart); poll if it goes quiet.
 const WATCH_INTERVAL = 4000;
+const TYPE_TICK = 30;
 
 export class ChatPanel {
 	constructor({ parent, boot, compact = false, on_conversation = null }) {
@@ -12,6 +13,7 @@ export class ChatPanel {
 		this.conversation = null;
 		this.busy = false;
 		this.stream_text = "";
+		this.typing_queue = "";
 		this.extensions = [];
 		this.make(parent);
 		frappe.realtime.on("ai_assistant_stream", (data) => this.on_event(data));
@@ -68,6 +70,7 @@ export class ChatPanel {
 
 	new_chat() {
 		this.conversation = null;
+		this.stop_typing();
 		this.$cards.empty();
 		this.show_empty();
 		this.set_busy(false);
@@ -83,6 +86,7 @@ export class ChatPanel {
 	}
 
 	render_all(data) {
+		this.stop_typing();
 		this.$messages.empty();
 		data.messages.forEach((m) => this.$messages.append(render.message(m)));
 		this.render_cards(data.pending_actions);
@@ -108,6 +112,7 @@ export class ChatPanel {
 		this.$messages.find(".ai-empty").remove();
 		this.$messages.append(render.message({ role: "user", content: text, input_mode: extra.voice_attachment ? "voice" : "text" }));
 		this.$input.val("");
+		this.stop_typing();
 		this.stream_text = "";
 		this.show_thinking(true);
 		this.early_events = this.conversation ? null : [];
@@ -156,21 +161,60 @@ export class ChatPanel {
 		this.last_event = Date.now();
 		if (data.type === "token") {
 			this.show_thinking(false);
-			this.stream_text += data.text;
-			this.streaming_bubble().empty().append(render.markdown(this.stream_text));
+			this.typing_queue += data.text;
+			this.typing_timer ??= setInterval(() => this.type_next(), TYPE_TICK);
 		} else if (data.type === "step") {
+			this.flush_typing();
 			this.end_stream_bubble();
 			this.$messages.append(render.tool_step(data.tool, null));
 			this.show_thinking(true);
 		} else if (data.type === "tool_result") {
 			this.$messages.find(`.ai-step[data-tool="${CSS.escape(data.tool)}"]`).last().replaceWith(render.tool_step(data.tool, data.status));
 		} else if (data.type === "confirmation" || data.type === "done" || data.type === "error") {
-			this.stream_text = "";
-			this.load(this.conversation);
+			this.after_typing(() => {
+				this.stream_text = "";
+				this.load(this.conversation);
+			});
 		} else if (data.type === "attachment_status") {
 			this.extensions.forEach((x) => x.on_status?.(data));
 		}
 		this.scroll();
+	}
+
+	// Providers send text in bursts; reveal it a few characters per tick, faster when behind.
+	type_next() {
+		if (!this.typing_queue) {
+			const then = this.typing_then;
+			this.stop_typing();
+			then?.();
+			return;
+		}
+		const n = Math.max(2, Math.ceil(this.typing_queue.length / 8));
+		this.show_stream(this.typing_queue.slice(0, n));
+		this.typing_queue = this.typing_queue.slice(n);
+	}
+
+	show_stream(text) {
+		this.stream_text += text;
+		this.streaming_bubble().empty().append(render.markdown(this.stream_text));
+		this.scroll();
+	}
+
+	flush_typing() {
+		if (this.typing_queue) this.show_stream(this.typing_queue);
+		this.stop_typing();
+	}
+
+	stop_typing() {
+		clearInterval(this.typing_timer);
+		this.typing_timer = null;
+		this.typing_queue = "";
+		this.typing_then = null;
+	}
+
+	after_typing(fn) {
+		if (this.typing_timer) this.typing_then = fn;
+		else fn();
 	}
 
 	end_stream_bubble() {

@@ -329,7 +329,7 @@ Embeddings: OpenAI, Gemini, Mistral, Ollama, or OpenAI-compatible. Anthropic has
 ### 6.5 Execution
 1. `api.chat.send_message` validates, inserts the user `AI Message`, sets the conversation to `Running`, and calls `frappe.enqueue("ai_assistant.agent.runner.run_turn", queue="long", conversation=..., job_id=f"ai-turn-{conversation}", deduplicate=True)`. Verified: `enqueue` stores the session user and `execute_job` calls `frappe.set_user(user)` (`frappe/utils/background_jobs.py`), so the job runs as the enqueuing user.
 2. `run_turn` asserts the session user owns the conversation, opens the LangSmith context (§11), and streams the graph with `stream_mode=["messages", "updates"]`.
-3. Token deltas and tool steps go to the user's realtime room (`frappe.publish_realtime("ai_assistant_stream", ..., user=user)`), throttled to one event per 100 ms.
+3. Token deltas and tool steps go to the user's realtime room (`frappe.publish_realtime("ai_assistant_stream", ..., user=user)`), one event per model chunk with no server buffering. [Decision] With tools bound, providers send text in bursts. A server throttle held each burst's tail until the next burst, so the browser smooths the display: it reveals queued text a few characters at a time, faster when it falls behind.
 4. On an interrupt: insert one `AI Action Request` per pending write, set the conversation to `Waiting for confirmation`, publish the confirmation card, commit, and end the job.
 5. `api.chat.decide_action` records the decision and enqueues `run_turn` with `Command(resume={"decisions": [...]})`. Decisions follow the interrupt's action order.
 6. One turn per conversation at a time. A second `send_message` while `Running` or `Waiting for confirmation` is rejected.
