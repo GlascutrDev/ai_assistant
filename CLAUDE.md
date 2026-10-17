@@ -108,7 +108,7 @@ Update this diagram whenever you add a DocType, tool, node, middleware, evaluato
 
 - **`CLAUDE.md`:** the diagram and actionable rules.
 - **`README.md`:** for users and administrators (setup of providers and models, using the chat, confirming actions). No internals.
-- **Per-module `README.md`** (purpose, public API, invariants, how to test): `agent/`, `tools/`, `llm/`, `rag/`, `persistence/`, `api/`. Add one when you create the module.
+- **Per-module `README.md`** (purpose, public API, invariants, how to test): `agent/`, `tools/`, `llm/`, `rag/`, `persistence/`, `api/`, `services/`, `attachments/`, `evals/`, `observability/`. Add one when you create the module.
 - **`SPEC.md`:** update when a decision changes or a §15 question is answered.
 
 ## Recipes

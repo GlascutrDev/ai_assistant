@@ -1,6 +1,9 @@
 import { api } from "./api";
 import * as render from "./render";
 
+// Frappe's socket gives up after 3 reconnect attempts (e.g. across a bench restart); poll if it goes quiet.
+const WATCH_INTERVAL = 4000;
+
 export class ChatPanel {
 	constructor({ parent, boot, compact = false, on_conversation = null }) {
 		this.boot = boot;
@@ -150,6 +153,7 @@ export class ChatPanel {
 			return;
 		}
 		if (data.conversation !== this.conversation) return;
+		this.last_event = Date.now();
 		if (data.type === "token") {
 			this.show_thinking(false);
 			this.stream_text += data.text;
@@ -232,10 +236,35 @@ export class ChatPanel {
 		this.$send.prop("disabled", busy);
 		this.$stop.toggleClass("hidden", !busy);
 		this.$input.prop("disabled", busy || this.$cards.children().length > 0);
+		this.watch(busy);
+	}
+
+	watch(on) {
+		clearInterval(this.watchdog);
+		this.watchdog = null;
+		if (!on) return;
+		reconnect_socket();
+		this.last_event = Date.now();
+		this.watchdog = setInterval(() => this.check_turn(), WATCH_INTERVAL);
+	}
+
+	async check_turn() {
+		reconnect_socket();
+		if (!this.conversation || Date.now() - this.last_event < WATCH_INTERVAL) return;
+		const data = await api.load(this.conversation).catch(() => null);
+		if (data && this.busy && data.conversation.name === this.conversation && data.conversation.status !== "Running") {
+			this.stream_text = "";
+			this.render_all(data);
+		}
 	}
 
 	scroll() {
 		const el = this.$messages.get(0);
 		if (el) el.scrollTop = el.scrollHeight;
 	}
+}
+
+function reconnect_socket() {
+	const socket = frappe.realtime.socket;
+	if (socket && !socket.connected && !frappe.realtime.disabled) socket.connect();
 }
