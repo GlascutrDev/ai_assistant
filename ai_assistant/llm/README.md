@@ -22,6 +22,7 @@ Builds chat, embedding, and speech models from `AI Assistant Settings`, and reco
 - API keys are read with `get_password` only in `registry.py` and `speech.py`. Never return, log, or store them.
 - Models are cached per site, profile, and `Settings.modified`. A Settings save takes effect on the next call.
 - No hard-coded model names here. Defaults live in `install.py`.
+- Anthropic adaptive-thinking models are built with `thinking.block_binding.prefix_mismatch_behavior = "drop_block"` (`providers.adapt_chat_model`). A stored thinking block is bound to the system prompt, and the system prompt changes between turns. Without this setting, the next turn fails with a 400 error.
 
 ## How to test
 

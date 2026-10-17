@@ -91,7 +91,8 @@ def _build_chat(profile, credential):
 		timeout=profile.timeout_seconds or 120,
 		organization=credential.organization,
 	)
-	return init_chat_model(profile.model_name, model_provider=spec.model_provider, **kwargs)
+	model = init_chat_model(profile.model_name, model_provider=spec.model_provider, **kwargs)
+	return providers.adapt_chat_model(credential.provider, model)
 
 
 def _build_embeddings(profile, credential):

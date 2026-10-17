@@ -37,6 +37,22 @@ class TestRegistry(IntegrationTestCase):
 		)
 		self.assertEqual(kwargs["base_url"], "https://api.moonshot.ai/v1")
 
+	def test_adaptive_anthropic_model_drops_stale_thinking_blocks(self):
+		from langchain_anthropic import ChatAnthropic
+
+		model = providers.adapt_chat_model("Anthropic", ChatAnthropic(model="claude-sonnet-5-5", api_key="k"))
+		self.assertEqual(model.thinking["block_binding"], {"prefix_mismatch_behavior": "drop_block"})
+		self.assertIn(providers.THINKING_BINDING_BETA, model.betas)
+
+	def test_older_anthropic_model_left_unchanged(self):
+		from langchain_anthropic import ChatAnthropic
+
+		model = providers.adapt_chat_model(
+			"Anthropic", ChatAnthropic(model="claude-3-5-haiku-latest", api_key="k")
+		)
+		self.assertIsNone(model.thinking)
+		self.assertFalse(model.betas)
+
 	def test_redact_removes_key(self):
 		doc = factories.configure()
 		message = registry.redact("bad key sk-test-not-a-real-key", doc.providers[0])

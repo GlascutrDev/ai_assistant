@@ -172,6 +172,8 @@ Hooks (in `settings.json`):
 ## Gotchas
 
 - LangGraph runs checkpoint writes and tool calls in worker threads; some do not inherit `frappe.local`, and all share the job's DB connection. Wrap any DB work that runs inside the graph in `with dblock.locked():` (it binds `frappe.local` and serializes queries).
+- "The AI provider is not responding" is the generic message for any unknown model error. Read the Error Log ("AI Assistant turn failed") for the real cause.
+- The system prompt changes on every turn (clock to the minute, Desk page, attachments). Anything that must match an earlier request, such as Anthropic thinking blocks, breaks. Keep `providers.adapt_chat_model` in place.
 - `frappe.db.sql` decodes the query as UTF-8: pass binary values as hex and `UNHEX()` them.
 - `IntegrationTestCase` rolls back once per class, not per test. Reset Settings with `factories.configure()` in `setUp`, and undo meta changes (property setters) with `addCleanup`.
 
