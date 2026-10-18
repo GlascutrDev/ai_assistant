@@ -59,6 +59,7 @@ Update this diagram whenever you add a DocType, tool, node, middleware, evaluato
 - The app is installed on both sites. Python deps are installed in the bench env; the dev-only `langgraph-checkpoint-conformance` is needed for `test_checkpointer`.
 - Frappe `16.51.0`, MariaDB `11.8` (native `VECTOR`), Redis `8.0` (no RediSearch/JSON modules).
 - Python deps go in `pyproject.toml`; install with `bench setup requirements --python` (ask first, it changes the shared env).
+- No `default_site` in `common_site_config.json`, so the site is chosen by the request host. `sites/localhost`, `sites/127.0.0.1` and `sites/192.168.1.35` are symlinks to `today.localhost` (`get_sites()` ignores symlinks). Do not run `bench use`: it pins `bench serve` to one site, and the socket then refuses any other host ("Invalid namespace").
 - Bench rules: bare `bench`; always `--site`; never a bare `bench migrate`; `bench start` only in the background and only if it isn't running.
 
 | Task | Command |
@@ -172,6 +173,7 @@ Hooks (in `settings.json`):
 ## Gotchas
 
 - LangGraph runs checkpoint writes and tool calls in worker threads; some do not inherit `frappe.local`, and all share the job's DB connection. Wrap any DB work that runs inside the graph in `with dblock.locked():` (it binds `frappe.local` and serializes queries).
+- Never enqueue a turn from inside a turn job. `enqueue_turn` dedupes on `ai-turn-<conversation>`, and the running job holds that id, so the new job is dropped silently and the thread stays `Running`. Resume in the same job (`runner._run_passes`). Tests do not catch this, because `now=True` runs jobs inline.
 - "The AI provider is not responding" is the generic message for any unknown model error. Read the Error Log ("AI Assistant turn failed") for the real cause.
 - The system prompt changes on every turn (clock to the minute, Desk page, attachments). Anything that must match an earlier request, such as Anthropic thinking blocks, breaks. Keep `providers.adapt_chat_model` in place.
 - `frappe.db.sql` decodes the query as UTF-8: pass binary values as hex and `UNHEX()` them.

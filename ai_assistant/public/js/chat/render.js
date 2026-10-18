@@ -27,7 +27,7 @@ export function markdown(text) {
 }
 
 export function message(m) {
-	if (m.role === "tool") return tool_step(m.tool_name, m.tool_status);
+	if (m.role === "tool") return tool_step(m.tool_name, m.tool_status, tool_error(m.content));
 	const $row = $(`<div class="ai-msg ai-msg-${esc(m.role)}"></div>`);
 	if (m.role === "user") {
 		$row.append($(`<div class="ai-bubble"></div>`).text(m.content));
@@ -43,12 +43,22 @@ export function message(m) {
 	return $row;
 }
 
-export function tool_step(name, status) {
+export function tool_step(name, status, error) {
 	const icon = { ok: "check", denied: "lock", error: "close" }[status] || "refresh";
 	const $step = $(`<div class="ai-step text-muted small" data-tool="${esc(name)}"></div>`);
 	$step.append(frappe.utils.icon(icon, "xs")).append($("<span></span>").text(" " + tool_label(name)));
 	if (status === "denied") $step.append($("<span></span>").text(" — " + __("permission denied")));
+	if (status === "error" && error) $step.append($(`<span class="text-danger"></span>`).text(" — " + error));
 	return $step;
+}
+
+function tool_error(content) {
+	try {
+		const parsed = JSON.parse(content || "{}");
+		return parsed && parsed.error ? String(parsed.error).slice(0, 300) : null;
+	} catch {
+		return null;
+	}
 }
 
 export function action_card(card, handlers) {

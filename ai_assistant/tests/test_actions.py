@@ -1,12 +1,16 @@
 import json
+from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from ai_assistant.agent import runner
 from ai_assistant.api import chat
 from ai_assistant.llm import registry
 from ai_assistant.services import actions
+from ai_assistant.services.conversations import enqueue_turn
 from ai_assistant.tests import factories, fake_llm
+from ai_assistant.tools import base
 
 
 def requests_of(conversation: str) -> list:
@@ -121,14 +125,64 @@ class TestActions(IntegrationTestCase):
 		self.assertEqual(requests_of(conv)[0].status, "Executed")
 
 	def test_precheck_failure_auto_rejects(self):
-		conv = self.propose(
-			fake_llm.tool_call("create_document", {"doctype": "User", "values": {"email": "x@example.com"}}),
-			"I cannot create users.",
-		)
+		with patch("ai_assistant.services.conversations.enqueue_turn", wraps=enqueue_turn) as enqueue:
+			conv = self.propose(
+				fake_llm.tool_call(
+					"create_document", {"doctype": "User", "values": {"email": "x@example.com"}}
+				),
+				"I cannot create users.",
+			)
+		self.assertEqual(enqueue.call_count, 1, "the resume must run in the same job, not be enqueued")
 		rows = requests_of(conv)
 		self.assertEqual(rows[0].status, "Failed")
 		self.assertIn("cannot access", rows[0].result)
 		self.assertEqual(frappe.db.get_value("AI Conversation", conv, "status"), "Active")
+		self.assertTrue(
+			frappe.db.exists(
+				"AI Message", {"conversation": conv, "role": "assistant", "content": "I cannot create users."}
+			)
+		)
+
+	def test_precheck_failure_then_valid_retry(self):
+		conv = self.propose(
+			fake_llm.tool_call(
+				"create_document", {"doctype": "ToDo", "values": {"description": "Retry", "no_such_field": 1}}
+			),
+			fake_llm.tool_call("create_document", {"doctype": "ToDo", "values": {"description": "Retry"}}),
+		)
+		self.assertEqual(sorted(r.status for r in requests_of(conv)), ["Failed", "Pending"])
+		self.assertEqual(frappe.db.get_value("AI Conversation", conv, "status"), "Waiting for confirmation")
+		self.assertTrue(any("no_such_field" in str(m.content) for m in self.model.calls[-1]))
+
+	def test_validation_error_on_approve_is_reported(self):
+		conv = self.propose(
+			fake_llm.tool_call(
+				"create_document", {"doctype": "ToDo", "values": {"description": "Bad", "status": "Bogus"}}
+			),
+			"It was not created.",
+		)
+		self.decide(conv, "approve")
+		row = requests_of(conv)[0]
+		self.assertEqual(row.status, "Failed")
+		self.assertIn("Bogus", row.result)
+		self.assertTrue(any("Bogus" in str(m.content) for m in self.model.calls[-1]))
+		self.assertFalse(self.todo_exists("Bad"))
+
+	def test_auto_resume_cap(self):
+		bad = [
+			fake_llm.tool_call(
+				"create_document", {"doctype": "ToDo", "values": {"no_such_field": i}}, call_id=f"bad_{i}"
+			)
+			for i in range(runner.MAX_AUTO_RESUMES + 1)
+		]
+		conv = self.propose(bad[0], *bad[1:])
+		self.assertEqual([r.status for r in requests_of(conv)], ["Failed"] * (runner.MAX_AUTO_RESUMES + 1))
+		self.assertEqual(frappe.db.get_value("AI Conversation", conv, "status"), "Active")
+		self.assertTrue(
+			frappe.db.exists(
+				"AI Message", {"conversation": conv, "role": "system_note", "content": runner.CANNOT_PREPARE}
+			)
+		)
 
 	def test_cancel_while_waiting_then_new_message(self):
 		conv = self.propose(
@@ -188,3 +242,27 @@ class TestWriteValidation(IntegrationTestCase):
 				"create_document", {"doctype": "ToDo", "values": {"owner": "Administrator"}}
 			)
 		self.assertIn("owner", error)
+
+
+class TestToolErrors(IntegrationTestCase):
+	def test_app_warning_is_returned(self):
+		def body():
+			frappe.msgprint("Leave approver is not set.")
+			return {"result": "created"}
+
+		result = base.execute("create_document", body, operation="create")
+		self.assertEqual(result["messages"], ["Leave approver is not set."])
+
+	def test_user_facing_frappe_error_keeps_its_message(self):
+		def body():
+			frappe.throw("ToDo X already exists.", frappe.DuplicateEntryError)
+
+		result = base.execute("create_document", body, operation="create")
+		self.assertEqual(result, {"error": "ToDo X already exists."})
+
+	def test_crash_gives_a_clear_message(self):
+		def body():
+			raise KeyError("internal")
+
+		result = base.execute("create_document", body, operation="create")
+		self.assertEqual(result, {"error": base.SYSTEM_ERROR})

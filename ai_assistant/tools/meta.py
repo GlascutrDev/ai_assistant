@@ -72,21 +72,25 @@ def _score(row, words: list[str]) -> int:
 def _describe(doctype: str) -> dict:
 	guard.check(doctype, "read")
 	meta = frappe.get_meta(doctype)
+	levels = set(meta.get_permlevel_access(permission_type="write"))
 	fields, tables = [], []
 	for df in catalog.readable_fields(doctype).values():
 		if df.fieldtype in ("Table", "Table MultiSelect"):
+			child = frappe.get_meta(df.options)
+			child_levels = set(child.get_permlevel_access(permission_type="write", parenttype=doctype))
 			tables.append(
 				{
 					"fieldname": df.fieldname,
 					"label": df.label,
 					"child_doctype": df.options,
 					"fields": [
-						_field(c) for c in catalog.readable_fields(df.options, parenttype=doctype).values()
+						_field(c, child_levels)
+						for c in catalog.readable_fields(df.options, parenttype=doctype).values()
 					],
 				}
 			)
 		else:
-			fields.append(_field(df))
+			fields.append(_field(df, levels))
 	return {
 		"doctype": doctype,
 		"single": bool(meta.issingle),
@@ -99,7 +103,7 @@ def _describe(doctype: str) -> dict:
 	}
 
 
-def _field(df) -> dict:
+def _field(df, write_levels: set[int]) -> dict:
 	out = {"fieldname": df.fieldname, "label": df.label, "type": df.fieldtype}
 	if df.fieldtype == "Link":
 		out["link_to"] = "(restricted)" if settings.is_blocked(df.options) else df.options
@@ -109,6 +113,6 @@ def _field(df) -> dict:
 		out["link_to_field"] = df.options
 	if df.reqd:
 		out["required"] = True
-	if df.read_only:
+	if df.read_only or df.permlevel not in write_levels:
 		out["read_only"] = True
 	return out

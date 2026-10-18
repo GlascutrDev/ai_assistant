@@ -19,6 +19,8 @@ from ai_assistant.services import actions, conversations, settings
 from ai_assistant.services.budget import BudgetExceededError
 
 PROVIDER_ERROR = "The AI provider is not responding. Try again."
+CANNOT_PREPARE = "The assistant could not prepare a valid action. Try again with more detail."
+MAX_AUTO_RESUMES = 3
 
 
 @dataclass
@@ -47,8 +49,7 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 		if message:
 			_close_open_interrupt(ctx)
 		graph_input = Command(resume=resume) if resume else {"messages": [user_input(message)]}
-		result = execute(ctx, graph_input, publisher)
-		finalize(conv, ctx, result, publisher, first_message=message)
+		_run_passes(conv, ctx, graph_input, publisher, message)
 	except (BudgetExceededError, ModelNotConfiguredError, ConversationTooLongError) as e:
 		fail(conv.name, publisher, str(e))
 	except Exception as e:
@@ -137,8 +138,9 @@ def _stream(agent, graph_input, config, ctx: TurnContext, result: TurnResult, pu
 
 def finalize(
 	conv, ctx: TurnContext, result: TurnResult, publisher: Publisher, first_message: str | None = None
-):
-	resume_now = False
+) -> list[dict] | None:
+	"""Persist the pass. Returns resume decisions when every write of the interrupt failed its pre-check."""
+	decisions = None
 	with dblock.locked():
 		transcript.persist(conv.name, result.messages, ctx.model_profile, run_id=result.run_id)
 		transcript.add_usage(conv.name, result.usage, ctx.model_profile)
@@ -148,19 +150,32 @@ def finalize(
 			status = "Active"
 		elif result.interrupts:
 			cards = _action_cards(conv.name, result)
-			status = "Waiting for confirmation"
-			resume_now = not any(card["status"] == "Pending" for card in cards)
-			if not resume_now:
+			if any(card["status"] == "Pending" for card in cards):
+				status = "Waiting for confirmation"
 				publisher.confirmation(cards)
+			else:
+				status = "Running"
+				decisions = actions.decisions_for(conv.name, result.interrupts[-1].id)
 		else:
 			status = "Active"
 		conversations.set_status(conv.name, status)
 		if not conv.title and first_message:
 			transcript.set_title(conv.name, first_message, ctx.model_profile)
-	if resume_now:
-		actions.resume_if_complete(conv.name, result.interrupts[-1].id)
-		return
-	publisher.done(status)
+	if decisions is None:
+		publisher.done(status)
+	return decisions
+
+
+def _run_passes(conv, ctx: TurnContext, graph_input, publisher: Publisher, first_message: str | None):
+	"""Resume in this job, not by enqueue: the running job holds the turn's job id, so the dedupe drops it."""
+	for _attempt in range(MAX_AUTO_RESUMES + 1):
+		result = execute(ctx, graph_input, publisher)
+		decisions = finalize(conv, ctx, result, publisher, first_message=first_message)
+		if decisions is None:
+			return
+		_commit()
+		graph_input, first_message = Command(resume={"decisions": decisions}), None
+	fail(conv.name, publisher, _(CANNOT_PREPARE))
 
 
 def fail(conversation: str, publisher: Publisher, message: str):
@@ -229,7 +244,7 @@ def _collect(messages: list, seen: set, result: TurnResult, publisher: Publisher
 			for call in m.tool_calls:
 				publisher.step(call["name"], call["args"])
 		else:
-			publisher.tool_result(m.name, transcript.tool_status(m))
+			publisher.tool_result(m.name, transcript.tool_status(m), transcript.tool_error(m))
 
 
 def _commit():

@@ -85,4 +85,6 @@ def embedding_kwargs(provider: str, *, api_key, base_url, dimensions, timeout) -
 			kw["dimensions"] = dimensions
 		if provider == "OpenAI Compatible":
 			kw["check_embedding_ctx_length"] = False
+	if provider == "Google Gemini" and dimensions:
+		kw["output_dimensionality"] = dimensions
 	return kw

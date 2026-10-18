@@ -28,6 +28,7 @@ The agent's tools. Every tool runs as `frappe.session.user` and can never do mor
 - Field names in `fields`, `filters`, `group_by`, and `order_by` must be readable at the user's permlevels.
 - Password and hidden fields never leave a tool.
 - Every call writes one `AI Audit Log` row through `base.execute`, also when it is denied or fails.
+- A failed call returns `{"error": <reason>}`: the app's own text for validation and 4xx Frappe errors, and `base.SYSTEM_ERROR` (with an Error Log) for anything else. A successful call adds the app's `msgprint` warnings as `messages`.
 - The `runtime` argument is optional and hidden from the model, so tests call tools directly with `.invoke({...})`.
 
 ## How to test

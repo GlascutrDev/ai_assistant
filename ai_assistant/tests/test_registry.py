@@ -37,6 +37,12 @@ class TestRegistry(IntegrationTestCase):
 		)
 		self.assertEqual(kwargs["base_url"], "https://api.moonshot.ai/v1")
 
+	def test_gemini_embeddings_use_profile_dimensions(self):
+		kwargs = providers.embedding_kwargs(
+			"Google Gemini", api_key="k", base_url=None, dimensions=1536, timeout=5
+		)
+		self.assertEqual(kwargs["output_dimensionality"], 1536)
+
 	def test_adaptive_anthropic_model_drops_stale_thinking_blocks(self):
 		from langchain_anthropic import ChatAnthropic
 

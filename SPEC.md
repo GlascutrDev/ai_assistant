@@ -564,7 +564,7 @@ All endpoints: `@frappe.whitelist(methods=[...])`, type hints on every argument,
 | `settings.run_evaluation(target_model: str \| None)` | POST | System Manager only; inserts an `AI Evaluation Run` and enqueues `evals.runner.run` (default target = `main_model`) |
 | `settings.rebuild_index()` | POST | System Manager only, enqueues `rebuild_all` |
 
-Realtime events (user room): `ai_assistant_stream` with `type ∈ {token, step, tool_result, confirmation, attachment_status, done, error}`, always carrying `conversation`.
+Realtime events (user room): `ai_assistant_stream` with `type ∈ {token, step, tool_result, confirmation, attachment_status, done, error}`, always carrying `conversation`. `tool_result` carries `tool`, `status`, and `error` (the short reason, or null).
 
 ---
 

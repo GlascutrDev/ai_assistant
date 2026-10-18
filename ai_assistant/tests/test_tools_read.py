@@ -60,6 +60,11 @@ class TestReadTools(IntegrationTestCase):
 		self.assertNotIn("description", result["document"])
 		self.assertNotIn("description", [f["fieldname"] for f in described["fields"]])
 
+	def test_field_above_write_permlevel_is_read_only(self):
+		df = frappe._dict(fieldname="status", label="Status", fieldtype="Data", permlevel=1, read_only=0)
+		self.assertTrue(meta._field(df, {0})["read_only"])
+		self.assertNotIn("read_only", meta._field(df, {0, 1}))
+
 	def test_ac06_blocked_doctype(self):
 		user = factories.assistant_user(roles=("AI Assistant User", "System Manager"))
 		with self.set_user(user):

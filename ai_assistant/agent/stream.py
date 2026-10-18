@@ -20,8 +20,8 @@ class Publisher:
 	def step(self, tool_name: str, args: dict):
 		self._send("step", {"tool": tool_name, "args": args})
 
-	def tool_result(self, tool_name: str, status: str):
-		self._send("tool_result", {"tool": tool_name, "status": status})
+	def tool_result(self, tool_name: str, status: str, error: str | None = None):
+		self._send("tool_result", {"tool": tool_name, "status": status, "error": error})
 
 	def confirmation(self, requests: list[dict]):
 		self._send("confirmation", {"requests": requests}, after_commit=True)

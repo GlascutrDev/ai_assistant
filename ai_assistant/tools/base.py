@@ -13,6 +13,8 @@ from ai_assistant.services import audit
 from ai_assistant.tools import serialize
 from ai_assistant.tools.guard import BlockedDocTypeError
 
+SYSTEM_ERROR = "The action failed because of a system error. Ask your administrator to check the Error Log."
+
 
 def execute(
 	tool_name: str,
@@ -48,11 +50,18 @@ def _execute(tool_name, body, operation, doctype, name, args, runtime, savepoint
 			{"error": message, "outcome": "permission_denied"},
 		)
 	except (frappe.ValidationError, frappe.DoesNotExistError) as e:
-		message = _message(e)
+		message = _message(e) or _("The record is not valid.")
 		outcome, error, result = "validation_error", message, {"error": message}
 	except Exception as e:
-		frappe.log_error(f"AI Assistant tool {tool_name} failed")
-		outcome, error, result = "error", f"{type(e).__name__}: {e}"[:500], {"error": _("The tool failed.")}
+		if _is_user_facing(e) and (message := _message(e)):
+			outcome, error, result = "validation_error", message, {"error": message}
+		else:
+			frappe.log_error(f"AI Assistant tool {tool_name} failed")
+			outcome, error = "error", f"{type(e).__name__}: {e}"[:500]
+			result = {"error": _(SYSTEM_ERROR)}
+	else:
+		if isinstance(result, dict) and (notes := _notes()):
+			result["messages"] = notes
 	finally:
 		frappe.clear_messages()
 	if sp and outcome != "ok":
@@ -69,6 +78,22 @@ def _execute(tool_name, body, operation, doctype, name, args, runtime, savepoint
 		conversation=ctx.conversation,
 	)
 	return serialize.clip(result)
+
+
+def _is_user_facing(e: Exception) -> bool:
+	"""Frappe errors with a 4xx status carry a message meant for the user (e.g. DuplicateEntryError)."""
+	return getattr(e, "http_status_code", 500) < 500
+
+
+def _notes() -> list[str]:
+	"""Messages the app showed without raising (msgprint), which Desk would show as a popup."""
+	notes = []
+	for m in frappe.local.message_log or []:
+		m = frappe.parse_json(m) if isinstance(m, str) else m
+		text = strip_html(str(m.get("message", "") if isinstance(m, dict) else m)).strip()
+		if text and text not in notes:
+			notes.append(text[:500])
+	return notes[:5]
 
 
 def _message(e: Exception) -> str:

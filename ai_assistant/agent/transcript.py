@@ -61,6 +61,16 @@ def persist(conversation: str, messages: list, profile_id: str, run_id: str | No
 			)
 
 
+def tool_error(m: ToolMessage) -> str | None:
+	"""The short reason a tool failed, for the step line in the chat."""
+	try:
+		content = json.loads(m.text or "{}")
+	except ValueError:
+		return None
+	error = content.get("error") if isinstance(content, dict) else None
+	return str(error)[:300] if error else None
+
+
 def tool_status(m: ToolMessage) -> str:
 	if getattr(m, "status", None) == "error":
 		return "error"

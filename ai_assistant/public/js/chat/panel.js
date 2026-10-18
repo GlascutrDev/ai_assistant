@@ -17,6 +17,8 @@ export class ChatPanel {
 		this.extensions = [];
 		this.make(parent);
 		frappe.realtime.on("ai_assistant_stream", (data) => this.on_event(data));
+		frappe.realtime.socket?.on("connect", () => this.show_offline(false));
+		frappe.realtime.socket?.on("connect_error", (e) => (this.socket_error = e.message));
 	}
 
 	make(parent) {
@@ -24,6 +26,7 @@ export class ChatPanel {
 			<div class="ai-panel ${this.compact ? "ai-compact" : ""}">
 				<div class="ai-messages"></div>
 				<div class="ai-cards"></div>
+				<div class="ai-offline hidden"></div>
 				<div class="ai-composer">
 					<div class="ai-chips"></div>
 					<textarea class="form-control ai-input" rows="2"></textarea>
@@ -169,7 +172,7 @@ export class ChatPanel {
 			this.$messages.append(render.tool_step(data.tool, null));
 			this.show_thinking(true);
 		} else if (data.type === "tool_result") {
-			this.$messages.find(`.ai-step[data-tool="${CSS.escape(data.tool)}"]`).last().replaceWith(render.tool_step(data.tool, data.status));
+			this.$messages.find(`.ai-step[data-tool="${CSS.escape(data.tool)}"]`).last().replaceWith(render.tool_step(data.tool, data.status, data.error));
 		} else if (data.type === "confirmation" || data.type === "done" || data.type === "error") {
 			this.after_typing(() => {
 				this.stream_text = "";
@@ -179,6 +182,19 @@ export class ChatPanel {
 			this.extensions.forEach((x) => x.on_status?.(data));
 		}
 		this.scroll();
+	}
+
+	show_offline(on) {
+		const $note = this.$wrapper.find(".ai-offline").toggleClass("hidden", !on);
+		if (!on) return;
+		let text = __("Live streaming is not connected, so replies appear only when they are complete.");
+		// Frappe's socket server accepts only the site name (or localhost) as the host, not an IP.
+		if (!["localhost", "127.0.0.1", frappe.boot.sitename].includes(location.hostname)) {
+			const url = `${location.protocol}//${frappe.boot.sitename}${location.port ? ":" + location.port : ""}`;
+			text += " " + __("Open the site at {0} to see replies as they are written.", [url]);
+		}
+		if (this.socket_error) text += ` (${this.socket_error})`;
+		$note.text(text);
 	}
 
 	// Providers send text in bursts; reveal it a few characters per tick, faster when behind.
@@ -295,6 +311,7 @@ export class ChatPanel {
 	async check_turn() {
 		reconnect_socket();
 		if (!this.conversation || Date.now() - this.last_event < WATCH_INTERVAL) return;
+		if (!frappe.realtime.socket?.connected) this.show_offline(true);
 		const data = await api.load(this.conversation).catch(() => null);
 		if (data && this.busy && data.conversation.name === this.conversation && data.conversation.status !== "Running") {
 			this.stream_text = "";

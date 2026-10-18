@@ -97,12 +97,21 @@ def decide(name: str, decision: str, edited_args: dict | None = None, message: s
 
 
 def resume_if_complete(conversation: str, interrupt_id: str) -> bool:
-	requests = _of_interrupt(conversation, interrupt_id)
-	if any(r.status == "Pending" for r in requests):
+	"""Enqueue the resumed turn. Call from a web request only: inside a turn job the dedupe drops it."""
+	decisions = decisions_for(conversation, interrupt_id)
+	if decisions is None:
 		return False
 	conversations.set_status(conversation, "Running")
-	conversations.enqueue_turn(conversation, resume={"decisions": [decision_of(r) for r in requests]})
+	conversations.enqueue_turn(conversation, resume={"decisions": decisions})
 	return True
+
+
+def decisions_for(conversation: str, interrupt_id: str) -> list[dict] | None:
+	"""The resume decisions of an interrupt, or None while any request is still Pending."""
+	requests = _of_interrupt(conversation, interrupt_id)
+	if any(r.status == "Pending" for r in requests):
+		return None
+	return [decision_of(r) for r in requests]
 
 
 def decision_of(request) -> dict:

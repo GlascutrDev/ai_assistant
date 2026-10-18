@@ -130,6 +130,12 @@
 	gap: 6px;
 	margin-top: 6px;
 }
+.ai-offline {
+	padding: 6px 12px;
+	font-size: var(--text-sm);
+	color: var(--text-muted);
+	background: var(--subtle-fg);
+}
 .ai-composer {
 	border-top: 1px solid var(--border-color);
 	padding: 8px 12px;

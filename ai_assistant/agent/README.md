@@ -21,7 +21,8 @@ Runs one turn of the assistant: build the agent, stream it, save the transcript,
 1. `api.chat.send_message` inserts the user `AI Message`, sets the conversation `Running`, enqueues `run_turn`.
 2. `run_turn` checks ownership, builds `TurnContext` (model = `Settings.main_model`), streams the graph with `durability="sync"`.
 3. New `AIMessage`/`ToolMessage`s become `AI Message` rows. A `HumanInTheLoop` interrupt becomes one `AI Action Request` per pending write, and the conversation becomes `Waiting for confirmation`.
-4. `api.chat.decide_action` resumes with `Command(resume={"decisions": [...]})` when every request of the interrupt is decided.
+4. If every write of the interrupt fails its pre-check (`tools/preview.precheck`), the requests are `Failed` and `run_turn` resumes the graph in the same job with reject decisions, so the model can correct the call. After `MAX_AUTO_RESUMES` such passes the turn ends with a system note.
+5. `api.chat.decide_action` resumes with `Command(resume={"decisions": [...]})` when every request of the interrupt is decided.
 
 ## Invariants
 

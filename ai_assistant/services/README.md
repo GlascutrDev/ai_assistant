@@ -10,7 +10,7 @@ Business logic behind the thin entry points (`api/`, controllers, `tasks.py`). O
 | `access` | `require_user()` (Guest, `enabled`, role), `has_access()`, `is_admin()` |
 | `budget` | `assert_available()` (daily tokens per user), `assert_site_budget()` (monthly cost), `add()` |
 | `conversations` | `load_own()`, `get_or_create()`, `start_turn()` (one turn per thread), `enqueue_turn()`, `add_message()`, `payload()` |
-| `actions` | AI Action Request: `create_from_interrupt()`, `decide()`, `resume_if_complete()`, `reject_open()`, `expire_stale()` |
+| `actions` | AI Action Request: `create_from_interrupt()`, `decide()`, `resume_if_complete()` (web requests only), `decisions_for()`, `reject_open()`, `expire_stale()` |
 | `attachments` | AI Attachment lifecycle: `create()`, `process()` (queue short), `for_message()`, `remove()`, `purge_old()` |
 | `voice` | `transcribe()` a recording into an editable transcript |
 | `audit` | `tool_call()` writes one AI Audit Log row |
