@@ -78,6 +78,18 @@ If you lost the permission in the meantime, the change fails and nothing is writ
 - **AI Audit Log**: every action the assistant tried, with its outcome. It holds no document content.
 - **AI Evaluation Run**: results of **Actions → Run Evaluation**, which tests the main model or a candidate model on a test site before you switch to it.
 
+### Troubleshooting
+
+**"Live streaming is not connected … (xhr poll error)"**: the browser cannot reach Frappe's socket.io server. Chat still works, but each reply appears only when it is complete. On the server:
+
+1. Make sure socket.io is running. In development, the bench `Procfile` needs `socketio: bench socketio` and `bench start` must be running. In production, `sudo supervisorctl status` must show the `node-socketio` process as RUNNING. If it does not, run `bench setup supervisor`, then `sudo supervisorctl reread && sudo supervisorctl update`.
+2. Check that it answers: `curl -s "http://localhost:9000/socket.io/?EIO=4&transport=polling"` should return text starting with `0{"sid"`. The port is `socketio_port` in `sites/common_site_config.json`.
+3. Make sure the browser can reach it. In development, opened from another computer: open port 9000 in the firewall as well as 8000. In production: run `bench setup nginx && sudo nginx -t && sudo systemctl reload nginx` so nginx proxies `/socket.io`. Open the site through nginx, not on `:8000`.
+4. Make sure the Redis servers in `common_site_config.json` (`redis_socketio`, `redis_queue`) are running.
+5. Run `bench build --app ai_assistant`, then hard-refresh the browser.
+
+If the message changes to **Invalid namespace** or **Invalid origin**, open the site by its site name rather than its IP address.
+
 ### Contributing
 
 This app uses `pre-commit` (ruff, eslint, prettier):
