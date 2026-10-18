@@ -6,7 +6,10 @@ from openai import OpenAI
 # Gemini through its OpenAI-compatible endpoint. Never hard-code keys here:
 #   GEMINI_API_KEY=AQ.... python misc/apen_ai_api.py
 # api_key = os.environ.get("GEMINI_API_KEY")
-api_key = "AQ.Ab8RN6IzI4C6Lna91793nAKIXyBanKIgBvLvRl_2G3yXkOfFeQ"  # Replace with your actual API key
+# api_key = "AQ.Ab8RN6IzI4C6Lna91793nAKIXyBanKIgBvLvRl_2G3yXkOfFeQ"  # Replace with your actual API key
+
+
+api_key = "AQ..."  # Replace with your actual API key
 if not api_key:
 	sys.exit("Set GEMINI_API_KEY to your Gemini API key from Google AI Studio.")
 

@@ -6,8 +6,10 @@ import anthropic
 # # Never hard-code keys here: run as  ANTHROPIC_API_KEY=sk-ant-... python misc/anthropic_ai_api.py
 # if not os.environ.get("ANTHROPIC_API_KEY"):
 # 	sys.exit("Set ANTHROPIC_API_KEY to your Anthropic API key (it starts with sk-ant-).")
+# ANTHROPIC_API_KEY="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"
 
-ANTHROPIC_API_KEY="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"
+
+ANTHROPIC_API_KEY="sk-..."
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 

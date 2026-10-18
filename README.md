@@ -90,6 +90,18 @@ If you lost the permission in the meantime, the change fails and nothing is writ
 
 If the message changes to **Invalid namespace** or **Invalid origin**, open the site by its site name rather than its IP address.
 
+**"… (Unauthorized: TypeError: fetch failed)"**: the browser reaches socket.io, but the server cannot reach the site at the address the browser used. To check the user's login, socket.io calls the site at that address. Test it on the server, from the bench folder:
+
+```bash
+node -e 'fetch(process.argv[1]+"/api/method/ping").then(r=>r.text()).then(console.log).catch(e=>console.error(e.cause))' "http://<address you open in the browser>"
+```
+
+- `ENOTFOUND` or `ETIMEDOUT`: on the server, add `127.0.0.1  <site host name>` to `/etc/hosts`.
+- `ECONNREFUSED` (development): set the right `webserver_port` in `sites/common_site_config.json`, and make sure `bench start` is running.
+- Certificate error (self-signed HTTPS): set `NODE_EXTRA_CA_CERTS=/path/to/ca.pem` for the socketio process in `config/supervisor.conf`, or use a trusted certificate (`bench setup lets-encrypt`).
+
+When the command prints `pong`, restart bench and refresh the browser.
+
 ### Contributing
 
 This app uses `pre-commit` (ruff, eslint, prettier):
