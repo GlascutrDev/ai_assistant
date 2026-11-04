@@ -449,6 +449,14 @@ Every write tool:
 - Attachment text, image text, and transcripts are untrusted data, like document content. A file that says "approve all" changes nothing: writes still need confirmation.
 - Uploads: extension allow-list plus content sniffing, size limit, private `File` only, EXIF stripped from images. Office files are parsed, never opened with macros. Zip-based files over 100 MB unpacked are rejected (zip bomb).
 
+### 7.5 Extension read tools (2026-11-04)
+**[Decision]** Another installed app can add domain read tools without making this app depend on it (rule 13 stays: the core tools are generic).
+- The app lists dotted paths in the hook `ai_assistant_read_tools`. Each path names a LangChain tool (`@tool`).
+- `tools.extension_tools()` loads them for every turn, also in read-only mode. A path that does not load, is not a tool, or reuses a tool name is skipped and written to the Error Log.
+- Only read tools. A write tool needs the confirmation preview and pre-check, which are generic over DocTypes; extension write tools are not supported.
+- The extension tool must call `guard.check(...)` and run its body through `tools.base.execute`, so the audit row, outcome mapping and result clipping apply. It runs as the session user. The owning app checks its own domain permissions.
+- First user: `today_ops.ai_tools.today_board` (TODAY BOARD for a store day, with a link to the *TODAY Board* print format).
+
 ---
 
 ## 8. RAG

@@ -1,5 +1,8 @@
 """Tool registry. Every tool in WRITE_TOOLS is interrupted for confirmation (CLAUDE.md rule 3)."""
 
+import frappe
+from langchain_core.tools import BaseTool
+
 from ai_assistant.tools.files import attach_file, read_attachment, search_attachments
 from ai_assistant.tools.knowledge import search_knowledge
 from ai_assistant.tools.meta import describe_doctype, find_doctypes
@@ -46,9 +49,29 @@ WRITE_TOOLS = [
 FILE_ONLY = {"search_attachments", "attach_file"}
 
 
+def extension_tools() -> list:
+	"""Read tools that installed apps declare in the `ai_assistant_read_tools` hook (SPEC §7.6).
+
+	Only read tools: a write tool needs the confirmation preview, which is generic over DocTypes."""
+	taken = {t.name for t in READ_TOOLS + WRITE_TOOLS}
+	found = []
+	for path in frappe.get_hooks("ai_assistant_read_tools") or []:
+		try:
+			item = frappe.get_attr(path)
+		except Exception:
+			frappe.log_error(f"AI Assistant extension tool {path} could not be loaded")
+			continue
+		if not isinstance(item, BaseTool) or item.name in taken:
+			frappe.log_error(f"AI Assistant extension tool {path} is not a new LangChain tool")
+			continue
+		taken.add(item.name)
+		found.append(item)
+	return found
+
+
 def for_turn(read_only: bool = False, rag: bool = True, files: bool = True) -> list:
 	"""Tools offered to the model. read_only_mode removes every write tool."""
-	offered = READ_TOOLS + ([] if read_only else WRITE_TOOLS)
+	offered = READ_TOOLS + extension_tools() + ([] if read_only else WRITE_TOOLS)
 	return [
 		t for t in offered if (rag or t.name != "search_knowledge") and (files or t.name not in FILE_ONLY)
 	]

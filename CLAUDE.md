@@ -26,6 +26,7 @@ agent/graph.py  compiled create_agent graph
 tools/ (session user; guard.py first; AI Audit Log always)
    meta: find_doctypes · describe_doctype
    read: list_documents · count_documents · aggregate · get_document · run_report · search_links
+   extension (hook ai_assistant_read_tools, read only): e.g. today_ops.ai_tools.today_board
    rag:  search_knowledge ─► rag/store.py (ai_embedding VECTOR, VEC_DISTANCE_COSINE) ─► per-doc permission filter
    files: read_attachment (File permission) · search_attachments (conversation-scoped chunks)
    write (interrupt → AI Action Request → user decides → resume):

@@ -21,6 +21,10 @@ The agent's tools. Every tool runs as `frappe.session.user` and can never do mor
 | files | `read_attachment`, `search_attachments` |
 | write | `create_document`, `update_document`, `submit_document`, `cancel_document`, `delete_document`, `add_comment`, `assign_to`, `apply_workflow_action`, `attach_file` |
 
+### Extension read tools
+
+`extension_tools()` loads the LangChain tools named in the `ai_assistant_read_tools` hook of installed apps (SPEC §7.5). `for_turn()` offers them with the read tools, also in read-only mode. Bad paths, objects that are not tools and duplicate names are skipped and logged. Write tools cannot come from a hook.
+
 ## Invariants
 
 - Only the calls in `.claude/references/permission-safe-tools.md`. No `ignore_permissions`, `get_all`, `db.sql`, `db.get_value` on user-chosen DocTypes, `set_user`, or `get_password`.
@@ -32,6 +36,8 @@ The agent's tools. Every tool runs as `frappe.session.user` and can never do mor
 - The `runtime` argument is optional and hidden from the model, so tests call tools directly with `.invoke({...})`.
 
 ## How to test
+
+- `bench --site today-test.localhost run-tests --module ai_assistant.tests.test_extension_tools`
 
 ```
 bench --site today-test.localhost run-tests --module ai_assistant.tests.test_tools_read
