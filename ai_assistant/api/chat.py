@@ -94,6 +94,13 @@ def upload_attachment(conversation: str | None = None, agent: str | None = None)
 	}
 
 
+@frappe.whitelist(methods=["GET"])
+@rate_limit(limit=120, seconds=60)
+def attachment_status(attachments: list[str] | str) -> list[dict]:
+	access.require_user()
+	return files.statuses(_json_arg(attachments, list))
+
+
 @frappe.whitelist(methods=["POST"])
 def remove_attachment(attachment: str) -> dict:
 	access.require_user()

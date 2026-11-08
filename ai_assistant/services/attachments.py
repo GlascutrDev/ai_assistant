@@ -175,6 +175,15 @@ def read_bytes(att) -> bytes:
 	return content.encode() if isinstance(content, str) else content
 
 
+def statuses(names: list[str]) -> list[dict]:
+	"""Status of the user's own attachments, for the chat chips when a realtime event was missed."""
+	out = []
+	for name in list(dict.fromkeys(names or []))[:20]:
+		att = load_own(name)
+		out.append({"attachment": att.name, "status": att.status, "error": att.error})
+	return out
+
+
 def remove(name: str):
 	att = load_own(name)
 	if att.sent:

@@ -195,6 +195,14 @@ class TestAttachments(IntegrationTestCase):
 		self.assertNotIn(stored[:200], dump)
 		self.assertIn(att.name, dump)
 
+	def test_status_endpoint_for_missed_realtime_events(self):
+		att = self.upload("plain.txt", b"hello")
+		with self.set_user(self.user):
+			rows = chat.attachment_status(attachments=[att.name])
+		self.assertEqual(rows, [{"attachment": att.name, "status": "Ready", "error": None}])
+		with self.set_user(factories.assistant_user()), self.assertRaises(frappe.PermissionError):
+			chat.attachment_status(attachments=[att.name])
+
 	def test_ac41_purge_removes_everything(self):
 		factories.configure(attachments_enabled=1, max_attachment_text_chars=200)
 		att = self.upload("long.txt", ("word " * 400).encode())

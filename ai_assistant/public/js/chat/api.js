@@ -13,6 +13,7 @@ export const api = {
 	archive: (conversation) => post("archive_conversation", { conversation }),
 	rate: (message, rating, comment) => post("rate_message", { message, rating, comment }),
 	remove_attachment: (attachment) => post("remove_attachment", { attachment }),
+	attachment_status: (attachments) => get("attachment_status", { attachments: JSON.stringify(attachments) }),
 	upload(conversation, file, field = "file", method = "upload_attachment", extra = {}) {
 		const form = new FormData();
 		form.append(field, file, file.name || "recording.webm");

@@ -1,5 +1,8 @@
 import { api } from "./api";
 
+const STATUS_POLL = 2000;
+const STUCK_AFTER = 30000;
+
 export class FilesExtension {
 	mount(panel) {
 		this.panel = panel;
@@ -46,7 +49,8 @@ export class FilesExtension {
 		this.render();
 		try {
 			const r = await api.upload(this.panel.conversation, file, "file", "upload_attachment", this.panel.agent_args());
-			Object.assign(item, { name: r.attachment, status: r.status });
+			Object.assign(item, { name: r.attachment, status: r.status, added: Date.now() });
+			this.watch();
 			if (!this.panel.conversation) {
 				this.panel.conversation = r.conversation;
 				this.panel.render_agent_bar(this.panel.agent_title());
@@ -65,9 +69,36 @@ export class FilesExtension {
 		this.render();
 	}
 
+	pending() {
+		return this.items.filter((i) => i.name && !["Ready", "Failed"].includes(i.status));
+	}
+
+	// The realtime status event can be missed (socket down, proxy without socket.io): poll until final.
+	watch() {
+		if (this.poll) return;
+		this.poll = setInterval(() => this.check(), STATUS_POLL);
+	}
+
+	async check() {
+		const pending = this.pending();
+		if (!pending.length) {
+			clearInterval(this.poll);
+			this.poll = null;
+			return;
+		}
+		const rows = await api.attachment_status(pending.map((i) => i.name)).catch(() => []);
+		rows.forEach((row) => this.on_status(row));
+		const stuck = this.pending().filter((i) => i.status === "Uploaded" && Date.now() - i.added > STUCK_AFTER);
+		stuck.forEach((i) => (i.error = __("Processing has not started. The background workers may be stopped.")));
+		if (stuck.length) this.render();
+	}
+
 	blocks_send() {
 		const waiting = this.items.some((i) => !["Ready", "Failed"].includes(i.status));
-		if (waiting) frappe.show_alert({ message: __("Wait until the files are ready."), indicator: "orange" });
+		if (waiting) {
+			this.check();
+			frappe.show_alert({ message: __("Wait until the files are ready."), indicator: "orange" });
+		}
 		return waiting;
 	}
 
