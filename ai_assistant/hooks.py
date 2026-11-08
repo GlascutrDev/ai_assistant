@@ -15,6 +15,10 @@ has_permission = {
 	"AI Attachment": "ai_assistant.permissions.owned_record_has_permission",
 	"AI Action Request": "ai_assistant.permissions.owned_record_has_permission",
 	"AI Usage Log": "ai_assistant.permissions.owned_record_has_permission",
+	"AI Memory": "ai_assistant.permissions.memory_has_permission",
+	"AI Feedback": "ai_assistant.permissions.owned_record_has_permission",
+	"AI Automation": "ai_assistant.permissions.automation_has_permission",
+	"AI Agent": "ai_assistant.permissions.agent_has_permission",
 }
 
 permission_query_conditions = {
@@ -23,19 +27,30 @@ permission_query_conditions = {
 	"AI Attachment": "ai_assistant.permissions.attachment_query",
 	"AI Action Request": "ai_assistant.permissions.action_request_query",
 	"AI Usage Log": "ai_assistant.permissions.usage_log_query",
+	"AI Memory": "ai_assistant.permissions.memory_query",
+	"AI Feedback": "ai_assistant.permissions.feedback_query",
+	"AI Automation": "ai_assistant.permissions.automation_query",
+	"AI Agent": "ai_assistant.permissions.agent_query",
 }
 
 scheduler_events = {
+	"cron": {"* * * * *": ["ai_assistant.tasks.run_due_automations"]},
 	"hourly": ["ai_assistant.tasks.expire_action_requests"],
 	"daily": [
 		"ai_assistant.tasks.purge_old_conversations",
 		"ai_assistant.tasks.reindex_changed_sources",
+		"ai_assistant.tasks.refresh_knowledge_pages",
 	],
 }
 
+AUTOMATION_EVENT = "ai_assistant.services.automations.on_doc_event"
+
 doc_events = {
 	"*": {
-		"on_update": "ai_assistant.rag.indexer.on_doc_change",
+		"after_insert": AUTOMATION_EVENT,
+		"on_update": ["ai_assistant.rag.indexer.on_doc_change", AUTOMATION_EVENT],
+		"on_submit": AUTOMATION_EVENT,
+		"on_cancel": AUTOMATION_EVENT,
 		"on_trash": "ai_assistant.rag.indexer.on_doc_trash",
 		"after_rename": "ai_assistant.rag.indexer.on_doc_rename",
 	}

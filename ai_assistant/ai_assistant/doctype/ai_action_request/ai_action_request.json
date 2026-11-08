@@ -61,7 +61,7 @@
    "fieldname": "operation",
    "fieldtype": "Select",
    "label": "Operation",
-   "options": "create\nupdate\nsubmit\ncancel\ndelete\ncomment\nassign\nworkflow\nattach"
+   "options": "create\nupdate\nsubmit\ncancel\ndelete\ncomment\nassign\nworkflow\nattach\nemail"
   },
   {
    "fieldname": "column_break_target",
@@ -136,7 +136,7 @@
  "issingle": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-11-08 11:44:43.863318",
  "modified_by": "Administrator",
  "module": "Ai Assistant",
  "name": "AI Action Request",

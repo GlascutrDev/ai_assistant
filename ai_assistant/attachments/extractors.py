@@ -1,6 +1,5 @@
 """Text extraction per kind (SPEC §6.8). Office files are parsed, never opened with macros."""
 
-import csv
 import io
 import zipfile
 from dataclasses import dataclass
@@ -24,7 +23,7 @@ def extract(kind: str, data: bytes, file_name: str = "") -> Extracted:
 	if kind == "document":
 		return Extracted(_docx(data))
 	if kind == "spreadsheet":
-		return Extracted(_csv(data) if file_name.lower().endswith(".csv") else _xlsx(data))
+		return Extracted(_spreadsheet(data, file_name))
 	if kind == "text":
 		return Extracted(decode_text(data))
 	frappe.throw(_("No text extractor for {0} files.").format(kind))
@@ -68,34 +67,20 @@ def _docx(data: bytes) -> str:
 	return "\n\n".join(parts)
 
 
-def _xlsx(data: bytes) -> str:
-	from openpyxl import load_workbook
+def _spreadsheet(data: bytes, file_name: str) -> str:
+	"""Each sheet as a markdown table of at most MAX_SHEET_ROWS rows. The spreadsheet tools see every row."""
+	from ai_assistant.attachments import sheets
 
-	check_zip(data)
-	workbook = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
 	parts = []
-	for sheet in workbook.worksheets:
-		rows = []
-		for i, row in enumerate(sheet.iter_rows(values_only=True)):
-			if i >= MAX_SHEET_ROWS:
-				rows.append(["…"])
-				break
-			if any(v not in (None, "") for v in row):
-				rows.append(["" if v is None else str(v) for v in row])
-		if rows:
-			parts.append(f"## Sheet: {sheet.title}\n{markdown_table(rows)}")
-	workbook.close()
+	for sheet in sheets.read(file_name, data):
+		rows = [r for r in sheet.rows if any(v is not None for v in r)]
+		more = len(rows) > MAX_SHEET_ROWS + 1 or sheet.truncated
+		cells = [["" if v is None else str(sheets.plain(v)) for v in r] for r in rows[: MAX_SHEET_ROWS + 1]]
+		if more:
+			cells.append(["…"])
+		if cells:
+			parts.append(f"## Sheet: {sheet.name}\n{markdown_table(cells)}")
 	return "\n\n".join(parts)
-
-
-def _csv(data: bytes) -> str:
-	text = decode_text(data)
-	try:
-		dialect = csv.Sniffer().sniff(text[:4096])
-	except csv.Error:
-		dialect = csv.excel
-	rows = list(csv.reader(io.StringIO(text), dialect))[: MAX_SHEET_ROWS + 1]
-	return markdown_table(rows)
 
 
 def markdown_table(rows: list[list[str]]) -> str:

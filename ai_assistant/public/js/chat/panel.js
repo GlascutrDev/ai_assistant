@@ -11,6 +11,7 @@ export class ChatPanel {
 		this.compact = compact;
 		this.on_conversation = on_conversation;
 		this.conversation = null;
+		this.agent = this.default_agent();
 		this.busy = false;
 		this.stream_text = "";
 		this.typing_queue = "";
@@ -24,6 +25,7 @@ export class ChatPanel {
 	make(parent) {
 		this.$wrapper = $(`
 			<div class="ai-panel ${this.compact ? "ai-compact" : ""}">
+				<div class="ai-agent-bar"></div>
 				<div class="ai-messages"></div>
 				<div class="ai-cards"></div>
 				<div class="ai-offline hidden"></div>
@@ -38,6 +40,7 @@ export class ChatPanel {
 				</div>
 			</div>`).appendTo(parent);
 		this.$messages = this.$wrapper.find(".ai-messages");
+		this.$agent_bar = this.$wrapper.find(".ai-agent-bar");
 		this.$cards = this.$wrapper.find(".ai-cards");
 		this.$input = this.$wrapper.find(".ai-input");
 		this.$send = this.$wrapper.find(".ai-send");
@@ -63,7 +66,41 @@ export class ChatPanel {
 		extension.mount(this);
 	}
 
+	default_agent() {
+		const agents = this.boot.agents || [];
+		return (agents.find((a) => a.is_default) || {}).name || null;
+	}
+
+	agent_title() {
+		return ((this.boot.agents || []).find((a) => a.name === this.agent) || {}).title || null;
+	}
+
+	agent_args() {
+		return !this.conversation && this.agent ? { agent: this.agent } : {};
+	}
+
+	render_agent_bar(title) {
+		const agents = this.boot.agents || [];
+		this.$agent_bar.empty();
+		if (this.conversation) {
+			if (title) this.$agent_bar.append($(`<div class="ai-agent-label text-muted small"></div>`).text(__("Agent: {0}", [title])));
+			return;
+		}
+		if (!agents.length) return;
+		const $select = $(`<select class="form-control input-xs ai-agent-select" aria-label="${__("Agent")}"></select>`);
+		if (!agents.some((a) => a.is_default)) $select.append($("<option></option>").val("").text(__("General assistant")));
+		agents.forEach((a) => $select.append($("<option></option>").val(a.name).text(a.title).attr("title", a.description || "")));
+		$select.val(this.agent || "").on("change", () => {
+			this.agent = $select.val() || null;
+			const chosen = agents.find((a) => a.name === this.agent);
+			this.$agent_bar.find(".ai-agent-desc").text(chosen?.description || "");
+		});
+		const chosen = agents.find((a) => a.name === this.agent);
+		this.$agent_bar.append($select, $(`<div class="ai-agent-desc text-muted small"></div>`).text(chosen?.description || ""));
+	}
+
 	show_empty() {
+		this.render_agent_bar();
 		this.$messages.empty().append(
 			$(`<div class="ai-empty text-muted"></div>`).text(
 				__("Ask about your data, or ask me to prepare a change. I can only see and do what you can.")
@@ -73,6 +110,7 @@ export class ChatPanel {
 
 	new_chat() {
 		this.conversation = null;
+		this.agent = this.default_agent();
 		this.stop_typing();
 		this.$cards.empty();
 		this.show_empty();
@@ -84,6 +122,7 @@ export class ChatPanel {
 	async load(conversation) {
 		const data = await api.load(conversation);
 		this.conversation = conversation;
+		this.render_agent_bar(data.conversation.agent_title);
 		this.render_all(data);
 		this.on_conversation?.(data.conversation);
 	}
@@ -120,10 +159,11 @@ export class ChatPanel {
 		this.show_thinking(true);
 		this.early_events = this.conversation ? null : [];
 		try {
-			const r = await api.send({ text, conversation: this.conversation, context: this.desk_context(), ...extra });
+			const r = await api.send({ text, conversation: this.conversation, context: this.desk_context(), ...this.agent_args(), ...extra });
 			this.extensions.forEach((x) => x.sent?.());
 			if (!this.conversation) {
 				this.conversation = r.conversation;
+				this.render_agent_bar(this.agent_title());
 				this.on_conversation?.({ name: r.conversation });
 				const early = this.early_events || [];
 				this.early_events = null;

@@ -50,6 +50,22 @@ def attach_file(attachment: str, doctype: str, name: str, runtime: ToolRuntime =
 	)
 
 
+def attachment_content(attachment: str, runtime=None) -> tuple[str, bytes]:
+	"""(file name, bytes) of the user's own chat attachment, for extension tools. With a runtime, the
+	attachment must also belong to the turn's conversation."""
+	att = _own_attachment(attachment, runtime)
+	return att.file_name, attachments.read_bytes(att)
+
+
+def file_content(file: str, runtime=None) -> tuple[str, bytes]:
+	"""(file name, bytes) of a chat attachment (by id) or of a File the user can read (by File name)."""
+	if attachments.exists(file):
+		return attachment_content(file, runtime)
+	doc = _record_file(file)
+	content = doc.get_content()
+	return doc.file_name, content.encode() if isinstance(content, str) else content
+
+
 def _read(file: str, runtime) -> dict:
 	limit = settings.get().max_attachment_text_chars or 30000
 	if attachments.exists(file):
@@ -57,14 +73,7 @@ def _read(file: str, runtime) -> dict:
 		if att.kind == "image":
 			return {"file": att.file_name, "kind": "image", "note": _("The image is in the user's message.")}
 		return {"file": att.file_name, "kind": att.kind, "text": (att.extracted_text or "")[:limit]}
-	doc = frappe.get_doc("File", file)
-	doc.check_permission("read")
-	if doc.attached_to_doctype and settings.is_blocked(doc.attached_to_doctype):
-		raise guard.BlockedDocTypeError(
-			_("The AI Assistant cannot access {0}.").format(doc.attached_to_doctype)
-		)
-	if doc.is_folder or (doc.file_url or "").startswith(("http://", "https://")):
-		frappe.throw(_("Only files stored in this system can be read."))
+	doc = _record_file(file)
 	ext = (doc.file_name or "").rsplit(".", 1)[-1].lower()
 	kind = upload.TYPES.get(ext, (None,))[0]
 	if kind not in ("pdf", "document", "spreadsheet", "text"):
@@ -117,6 +126,18 @@ def _attach(attachment: str, doctype: str, name: str, runtime) -> dict:
 		"file": file.name,
 		"file_link": serialize.desk_link("File", file.name),
 	}
+
+
+def _record_file(file: str):
+	doc = frappe.get_doc("File", file)
+	doc.check_permission("read")
+	if doc.attached_to_doctype and settings.is_blocked(doc.attached_to_doctype):
+		raise guard.BlockedDocTypeError(
+			_("The AI Assistant cannot access {0}.").format(doc.attached_to_doctype)
+		)
+	if doc.is_folder or (doc.file_url or "").startswith(("http://", "https://")):
+		frappe.throw(_("Only files stored in this system can be read."))
+	return doc
 
 
 def _own_attachment(name: str, runtime):

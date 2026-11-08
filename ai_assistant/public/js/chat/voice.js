@@ -81,9 +81,11 @@ export class VoiceExtension {
 		try {
 			const r = await api.upload(this.panel.conversation, blob, "audio", "transcribe", {
 				duration_seconds: this.duration.toFixed(1),
+				...this.panel.agent_args(),
 			});
 			if (!this.panel.conversation) {
 				this.panel.conversation = r.conversation;
+				this.panel.render_agent_bar(this.panel.agent_title());
 				this.panel.on_conversation?.({ name: r.conversation });
 			}
 			this.attachment = r.attachment;

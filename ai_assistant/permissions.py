@@ -28,6 +28,59 @@ def message_has_permission(doc, ptype=None, user=None) -> bool:
 	return owner == user and has_access(user)
 
 
+def memory_has_permission(doc, ptype=None, user=None) -> bool:
+	"""Shared memories: read for assistant users, write for System Managers. Personal: their user only."""
+	user = user or frappe.session.user
+	if is_admin(user):
+		return True
+	if doc.scope == "Shared":
+		return ptype in (None, "read") and has_access(user)
+	return (doc.user or user) == user and has_access(user)
+
+
+def memory_query(user=None) -> str:
+	user = user or frappe.session.user
+	if is_admin(user):
+		return ""
+	return f"(`tabAI Memory`.user = {frappe.db.escape(user)} or `tabAI Memory`.scope = 'Shared')"
+
+
+def automation_has_permission(doc, ptype=None, user=None) -> bool:
+	"""Owner only; a new automation is the session user's."""
+	user = user or frappe.session.user
+	if is_admin(user):
+		return True
+	return (doc.user or user) == user and has_access(user)
+
+
+def automation_query(user=None) -> str:
+	return _owner_condition("AI Automation", user)
+
+
+def agent_has_permission(doc, ptype=None, user=None) -> bool:
+	"""System Managers manage agents; other users read the ones they can use."""
+	from ai_assistant.services import agents
+
+	user = user or frappe.session.user
+	if is_admin(user):
+		return True
+	return ptype in (None, "read") and agents.can_use(doc, user)
+
+
+def agent_query(user=None) -> str:
+	user = user or frappe.session.user
+	if is_admin(user):
+		return ""
+	roles = ", ".join(frappe.db.escape(r) for r in frappe.get_roles(user)) or "''"
+	limited = "select parent from `tabAI Allowed Role` where parenttype = 'AI Agent'"
+	mine = f"{limited} and role in ({roles})"
+	return f"`tabAI Agent`.enabled = 1 and (`tabAI Agent`.name not in ({limited}) or `tabAI Agent`.name in ({mine}))"
+
+
+def feedback_query(user=None) -> str:
+	return _owner_condition("AI Feedback", user)
+
+
 def conversation_query(user=None) -> str:
 	return _owner_condition("AI Conversation", user)
 

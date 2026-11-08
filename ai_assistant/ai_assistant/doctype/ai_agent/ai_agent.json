@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:title",
+ "creation": "2026-11-08 14:00:00.000000",
+ "description": "A configured assistant: instructions, a subset of tools and knowledge, and who can use it.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "enabled",
+  "is_default",
+  "read_only",
+  "column_break_desc",
+  "description",
+  "roles",
+  "instructions_section",
+  "instructions",
+  "tools_section",
+  "allowed_tools",
+  "column_break_tools",
+  "knowledge_sources"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default",
+   "description": "Used for new conversations when the user does not choose an agent. One agent at most."
+  },
+  {
+   "fieldname": "read_only",
+   "fieldtype": "Check",
+   "label": "Read Only",
+   "description": "This agent can only read and answer; it has no write tools."
+  },
+  {
+   "fieldname": "column_break_desc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "description": "Shown to users when they choose an agent."
+  },
+  {
+   "fieldname": "roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles",
+   "options": "AI Allowed Role",
+   "description": "Who can use this agent. Empty: every assistant user."
+  },
+  {
+   "fieldname": "instructions_section",
+   "fieldtype": "Section Break",
+   "label": "Instructions"
+  },
+  {
+   "fieldname": "instructions",
+   "fieldtype": "Long Text",
+   "label": "Instructions",
+   "description": "How this agent works: its job, tone, steps, and what to avoid. They add to the assistant's rules and never replace them."
+  },
+  {
+   "fieldname": "tools_section",
+   "fieldtype": "Section Break",
+   "label": "Tools and Knowledge"
+  },
+  {
+   "fieldname": "allowed_tools",
+   "fieldtype": "Small Text",
+   "label": "Allowed Tools",
+   "description": "One tool name per line. Empty: every tool. An agent can only have fewer tools than the assistant, never more."
+  },
+  {
+   "fieldname": "column_break_tools",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "knowledge_sources",
+   "fieldtype": "Table MultiSelect",
+   "label": "Knowledge Sources",
+   "options": "AI Agent Knowledge",
+   "description": "search_knowledge looks only in these record types (AI Knowledge Document for articles). Empty: the whole knowledge base."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-08 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Agent",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0,
+   "write": 1
+  },
+  {
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "All",
+   "share": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

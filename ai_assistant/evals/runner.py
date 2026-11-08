@@ -176,7 +176,7 @@ def _proposal(action: dict) -> dict:
 	args = action.get("args") or {}
 	return {
 		"tool": action["name"],
-		"operation": actions.OPERATIONS.get(action["name"]),
+		"operation": actions.operation_of(action["name"]),
 		"doctype": args.get("doctype"),
 		"args": args,
 	}

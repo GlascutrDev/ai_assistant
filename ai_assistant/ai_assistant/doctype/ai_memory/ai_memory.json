@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-11-08 12:00:00.000000",
+ "description": "A fact the assistant keeps across conversations. Personal: only its user. Shared: every user; only a System Manager writes it.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "content",
+  "scope",
+  "user",
+  "column_break_source",
+  "status",
+  "source",
+  "conversation"
+ ],
+ "fields": [
+  {
+   "fieldname": "content",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Content",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scope",
+   "fieldtype": "Select",
+   "default": "Personal",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Scope",
+   "options": "Personal\nShared"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "User",
+   "options": "User",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_source",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "default": "Active",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nArchived"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "default": "Manual",
+   "label": "Source",
+   "options": "Manual\nAssistant\nFeedback",
+   "read_only": 1
+  },
+  {
+   "fieldname": "conversation",
+   "fieldtype": "Link",
+   "label": "Conversation",
+   "options": "AI Conversation",
+   "read_only": 1
+  }
+ ],
+ "in_create": 0,
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-08 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Memory",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "All",
+   "share": 0,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "content",
+ "track_changes": 1
+}

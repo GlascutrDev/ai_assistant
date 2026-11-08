@@ -18,7 +18,25 @@ OPERATIONS = {
 	"assign_to": "assign",
 	"apply_workflow_action": "workflow",
 	"attach_file": "attach",
+	"write_spreadsheet": "create",
+	"create_documents": "create",
+	"update_documents": "update",
+	"delete_documents": "delete",
+	"send_email": "email",
+	"remember": "create",
+	"forget_memory": "delete",
 }
+
+
+def operation_of(tool_name: str) -> str | None:
+	"""The operation of a core write tool, or of an extension write tool (its `ai_assistant` metadata)."""
+	from ai_assistant import tools
+
+	if tool_name in OPERATIONS:
+		return OPERATIONS[tool_name]
+	spec = tools.write_spec(tool_name)
+	return spec["operation"] if spec else None
+
 
 CARD_FIELDS = [
 	"name",
@@ -53,7 +71,7 @@ def create_from_interrupt(conversation: str, interrupt, tool_call_ids: list[str]
 				"conversation": conversation,
 				"user": frappe.session.user,
 				"tool_name": action["name"],
-				"operation": OPERATIONS.get(action["name"]),
+				"operation": operation_of(action["name"]),
 				"target_doctype": target_doctype,
 				"target_name": target_name,
 				"proposed_args": json.dumps(args, default=str),

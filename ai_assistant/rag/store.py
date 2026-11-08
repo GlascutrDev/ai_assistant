@@ -17,9 +17,12 @@ OVERFETCH = 4
 
 
 class FrappeVectorStore(VectorStore):
-	def __init__(self, embeddings: Embeddings, conversation: str | None = None):
+	def __init__(
+		self, embeddings: Embeddings, conversation: str | None = None, sources: list[str] | None = None
+	):
 		self._embeddings = embeddings
 		self.conversation = conversation
+		self.sources = sources
 
 	@property
 	def embeddings(self) -> Embeddings:
@@ -85,6 +88,9 @@ class FrappeVectorStore(VectorStore):
 		params = [json.dumps([float(v) for v in vector])]
 		if self.conversation:
 			params.append(self.conversation)
+		if self.sources:
+			scope += " and source_doctype in ({0})".format(", ".join(["%s"] * len(self.sources)))
+			params += list(self.sources)
 		params.append(int(limit))
 		return frappe.db.sql(
 			f"""select source_doctype, source_name, chunk_no, content, metadata,

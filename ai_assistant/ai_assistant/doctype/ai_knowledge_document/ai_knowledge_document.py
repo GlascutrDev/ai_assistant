@@ -3,6 +3,15 @@
 
 from frappe.model.document import Document
 
+from ai_assistant.rag import web
+
 
 class AIKnowledgeDocument(Document):
-	pass
+	def validate(self):
+		"""See frappe.model.document.Document.validate."""
+		if self.source_url and self.has_value_changed("source_url"):
+			web.check_url(self.source_url)
+
+	def on_update(self):
+		"""See frappe.model.document.Document.on_update."""
+		web.enqueue_refresh(self)

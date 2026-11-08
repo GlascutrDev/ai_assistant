@@ -216,3 +216,18 @@
 		content: "...";
 	}
 }
+.ai-agent-bar:not(:empty) {
+	border-bottom: 1px solid var(--border-color);
+	padding: 6px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.ai-agent-select {
+	max-width: 280px;
+}
+.ai-feedback {
+	display: flex;
+	gap: 2px;
+	margin-top: 2px;
+}

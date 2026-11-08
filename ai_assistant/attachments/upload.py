@@ -21,7 +21,17 @@ TYPES = {
 	"pdf": ("pdf", ("application/pdf",)),
 	"docx": ("document", ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ZIP)),
 	"xlsx": ("spreadsheet", ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ZIP)),
+	"xlsm": (
+		"spreadsheet",
+		(
+			"application/vnd.ms-excel.sheet.macroenabled.12",
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+			ZIP,
+		),
+	),
+	"xls": ("spreadsheet", ("application/vnd.ms-excel",)),
 	"csv": ("spreadsheet", ("text/csv",)),
+	"tsv": ("spreadsheet", ("text/tab-separated-values",)),
 	"txt": ("text", ("text/plain",)),
 	"md": ("text", ("text/markdown",)),
 	"json": ("text", ("application/json",)),
@@ -32,7 +42,7 @@ TYPES = {
 	"webm": ("audio", ("video/webm", "audio/webm")),
 	"ogg": ("audio", ("audio/ogg",)),
 }
-TEXT_KINDS_BY_EXT = ("csv", "txt", "md", "json")
+TEXT_KINDS_BY_EXT = ("csv", "tsv", "txt", "md", "json")
 MAX_IMAGE_SIDE = 2048
 
 
@@ -66,7 +76,7 @@ def check(file_name: str, data: bytes, voice: bool = False) -> CheckedFile:
 	if kind == "image":
 		_require_image_support()
 		data = clean_image(data, mime)
-	elif ext in ("docx", "xlsx"):
+	elif ext in ("docx", "xlsx", "xlsm"):
 		check_zip(data)
 	return CheckedFile(file_name, data, "voice" if voice else kind, mime)
 

@@ -13,6 +13,7 @@ class TurnContext:
 	model_profile: str | None = None
 	is_evaluation: bool = False
 	desk_context: dict | None = None
+	agent: str | None = None
 	limits: dict = field(default_factory=dict)
 
 

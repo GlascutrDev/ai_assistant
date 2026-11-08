@@ -25,9 +25,12 @@ def load_own(name: str):
 	return conv
 
 
-def get_or_create(name: str | None, context: dict | None = None):
+def get_or_create(name: str | None, context: dict | None = None, agent: str | None = None):
+	"""The user's conversation, or a new one with `agent` (else the default agent; fixed for its life)."""
 	if name:
 		return load_own(name)
+	from ai_assistant.services import agents
+
 	context = context or {}
 	doctype = context.get("doctype")
 	valid_context = doctype and isinstance(doctype, str) and frappe.db.exists("DocType", doctype)
@@ -37,6 +40,7 @@ def get_or_create(name: str | None, context: dict | None = None):
 			"user": frappe.session.user,
 			"status": "Active",
 			"main_model": settings.get().main_model,
+			"agent": agents.resolve(agent),
 			"context_doctype": doctype if valid_context else None,
 			"context_name": (str(context.get("name") or "")[:140] or None) if valid_context else None,
 		}
@@ -62,6 +66,9 @@ def start_turn(conv, text: str, attachments: list[str] | None = None, voice_atta
 	if status == "Archived":
 		frappe.throw(_("This conversation is archived. Start a new one."))
 	budget.assert_available()
+	from ai_assistant.services import agents
+
+	agents.load(conv.agent)
 	message = add_message(conv.name, "user", text, input_mode=input_mode, attachments=attachments)
 	if attachments:
 		from ai_assistant.services import attachments as files
@@ -149,8 +156,12 @@ def payload(conv) -> dict:
 	if not frappe.session.user or "System Manager" not in frappe.get_roles():
 		for m in messages:
 			m.pop("langsmith_run_id", None)
-	from ai_assistant.services import actions
+	from ai_assistant.services import actions, feedback
 
+	ratings = feedback.ratings_for(conv.name)
+	for m in messages:
+		if m.role == "assistant":
+			m["rating"] = ratings.get(str(m.name))
 	return {
 		"conversation": {
 			"name": conv.name,
@@ -158,6 +169,8 @@ def payload(conv) -> dict:
 			"status": conv.status,
 			"context_doctype": conv.context_doctype,
 			"context_name": conv.context_name,
+			"agent": conv.agent,
+			"agent_title": frappe.db.get_value("AI Agent", conv.agent, "title") if conv.agent else None,
 		},
 		"messages": messages,
 		"pending_actions": actions.pending_for(conv.name),

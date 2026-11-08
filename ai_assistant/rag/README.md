@@ -13,6 +13,7 @@ Permission-aware retrieval over the knowledge sources (SPEC §8).
 | `indexer.on_doc_change/on_doc_trash/on_doc_rename` | `doc_events["*"]` hooks; return at once unless the DocType is an enabled source |
 | `indexer.is_searchable()` | RAG on, index not stale, table dimensions match the embedding profile |
 | `loaders.text_of(doc, content_fields)` | Text of a source document |
+| `web.check_url(url)` · `web.fetch(url)` · `web.refresh(name)` · `web.refresh_all()` | Web pages as knowledge (SPEC §8.1.1): https only, public addresses only (checked again on every redirect), 2 MB, HTML or text; stored in `url_text`; re-indexed only when the text changed |
 
 ## Invariants
 

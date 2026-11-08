@@ -14,7 +14,7 @@ from ai_assistant.agent.attachments import attachments_inliner
 from ai_assistant.agent.context import TurnContext
 from ai_assistant.llm import registry
 from ai_assistant.persistence.checkpointer import FrappeCheckpointSaver
-from ai_assistant.services import settings
+from ai_assistant.services import agents, settings
 
 DECISIONS = ["approve", "edit", "reject"]
 
@@ -24,8 +24,13 @@ def build(ctx: TurnContext, attachments: list[dict] | None = None):
 	conf = settings.get()
 	model = registry.get_chat_model(ctx.model_profile)
 	turn_tools = tools.for_turn(
-		read_only=bool(conf.read_only_mode), rag=bool(conf.rag_enabled), files=bool(conf.attachments_enabled)
+		read_only=bool(conf.read_only_mode),
+		rag=bool(conf.rag_enabled),
+		files=bool(conf.attachments_enabled),
+		memory=bool(conf.memory_enabled),
 	)
+	agent = agents.load(ctx.agent) if not ctx.is_evaluation else None
+	turn_tools = agents.filter_tools(agent, turn_tools)
 	write_names = {t.name for t in turn_tools} & tools.write_tool_names()
 	stack = [
 		attachments_inliner,
@@ -46,7 +51,7 @@ def build(ctx: TurnContext, attachments: list[dict] | None = None):
 	return create_agent(
 		model,
 		tools=turn_tools,
-		system_prompt=prompts.system(ctx, attachments),
+		system_prompt=prompts.system(ctx, attachments, agent),
 		middleware=stack,
 		context_schema=TurnContext,
 		checkpointer=FrappeCheckpointSaver(),

@@ -33,6 +33,8 @@
   "action_request_ttl_minutes",
   "column_break_safety",
   "blocked_doctypes",
+  "memory_enabled",
+  "automations_enabled",
   "knowledge_tab",
   "rag_enabled",
   "index_stale",
@@ -230,6 +232,20 @@
    "label": "Blocked DocTypes"
   },
   {
+   "default": "1",
+   "description": "The assistant can save facts the user asks it to remember (each save is confirmed) and reads them in every conversation.",
+   "fieldname": "memory_enabled",
+   "fieldtype": "Check",
+   "label": "Memory Enabled"
+  },
+  {
+   "default": "0",
+   "description": "Users can run the assistant on a schedule or when a record changes (AI Automation). Each run uses tokens; every change still waits for approval.",
+   "fieldname": "automations_enabled",
+   "fieldtype": "Check",
+   "label": "Automations Enabled"
+  },
+  {
    "fieldname": "knowledge_tab",
    "fieldtype": "Tab Break",
    "label": "Knowledge"
@@ -421,7 +437,7 @@
  "issingle": 1,
  "istable": 0,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-11-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Ai Assistant",
  "name": "AI Assistant Settings",

@@ -11,8 +11,13 @@
   "visible_to_roles",
   "attachment",
   "last_indexed",
+  "source_url",
+  "url_fetched_on",
+  "url_error",
   "content_section",
-  "content"
+  "content",
+  "url_section",
+  "url_text"
  ],
  "fields": [
   {
@@ -49,6 +54,27 @@
    "read_only": 1
   },
   {
+   "description": "A public https web page to index. It is fetched again every day. Private and internal addresses are refused.",
+   "fieldname": "source_url",
+   "fieldtype": "Data",
+   "label": "Web Page",
+   "options": "URL"
+  },
+  {
+   "fieldname": "url_fetched_on",
+   "fieldtype": "Datetime",
+   "label": "Web Page Fetched On",
+   "read_only": 1,
+   "depends_on": "source_url"
+  },
+  {
+   "fieldname": "url_error",
+   "fieldtype": "Small Text",
+   "label": "Web Page Error",
+   "read_only": 1,
+   "depends_on": "url_error"
+  },
+  {
    "fieldname": "content_section",
    "fieldtype": "Section Break",
    "label": "Content"
@@ -57,13 +83,26 @@
    "fieldname": "content",
    "fieldtype": "Text Editor",
    "label": "Content"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "source_url",
+   "fieldname": "url_section",
+   "fieldtype": "Section Break",
+   "label": "Text from the Web Page"
+  },
+  {
+   "fieldname": "url_text",
+   "fieldtype": "Long Text",
+   "label": "Web Page Text",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "issingle": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-11-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Ai Assistant",
  "name": "AI Knowledge Document",

@@ -5,6 +5,7 @@ from frappe import _
 from frappe.model import no_value_fields, table_fields
 from frappe.utils import escape_html, strip_html
 
+from ai_assistant import tools
 from ai_assistant.services import catalog
 from ai_assistant.tools import guard
 
@@ -21,7 +22,47 @@ PTYPES = {
 }
 
 
+def spec_of(tool_name: str) -> dict | None:
+	"""Card spec of a write tool with its own pre-check and preview (a core tool here, or an extension).
+	A core spec's `precheck` runs every guard check itself (`own_guard`)."""
+	from ai_assistant.tools import bulk, mail, spreadsheets
+	from ai_assistant.tools import memory as memory_tools
+
+	bulk_spec = {"own_guard": True, "precheck": bulk.precheck, "preview": bulk.preview_rows, "by_name": True}
+	core = {
+		"write_spreadsheet": {
+			"operation": "create",
+			"doctype": "File",
+			"own_guard": True,
+			"precheck": spreadsheets.precheck,
+			"preview": spreadsheets.preview_rows,
+		},
+		"create_documents": {**bulk_spec, "operation": "create"},
+		"update_documents": {**bulk_spec, "operation": "update"},
+		"delete_documents": {**bulk_spec, "operation": "delete"},
+		"send_email": {"operation": "email", "own_guard": True, "precheck": mail.precheck},
+	}
+	memory_spec = {
+		"doctype": "AI Memory",
+		"own_guard": True,
+		"by_name": True,
+		"precheck": memory_tools.precheck,
+		"preview": memory_tools.preview_rows,
+	}
+	core["remember"] = {**memory_spec, "operation": "create"}
+	core["forget_memory"] = {**memory_spec, "operation": "delete"}
+	return core.get(tool_name) or tools.write_spec(tool_name)
+
+
 def target_of(tool_name: str, args: dict) -> tuple[str | None, str | None]:
+	if tool_name == "send_email":
+		doctype = args.get("reference_doctype")
+		return (
+			(doctype, args.get("reference_name")) if catalog.is_doctype(doctype) else ("Communication", None)
+		)
+	if spec := spec_of(tool_name):
+		doctype = spec.get("doctype") or args.get("doctype")
+		return (doctype if catalog.is_doctype(doctype) else None), None
 	doctype = args.get("doctype")
 	name = args.get("name")
 	doctype = doctype if catalog.is_doctype(doctype) else None
@@ -30,15 +71,33 @@ def target_of(tool_name: str, args: dict) -> tuple[str | None, str | None]:
 
 def precheck(tool_name: str, args: dict) -> str | None:
 	"""Error message when the write would fail on access or field names, else None."""
-	doctype, name = args.get("doctype"), args.get("name")
 	try:
-		guard.check(doctype, PTYPES.get(tool_name, "write"), name if tool_name != "create_document" else None)
-		if tool_name in ("create_document", "update_document"):
-			check_values(doctype, args.get("values") or {}, new=tool_name == "create_document")
+		if spec := spec_of(tool_name):
+			_extension_precheck(tool_name, spec, args)
+		else:
+			_core_precheck(tool_name, args)
 	except (frappe.PermissionError, frappe.ValidationError, frappe.DoesNotExistError) as e:
 		frappe.clear_messages()
 		return strip_html(str(e)) or _("Permission denied.")
 	return None
+
+
+def _core_precheck(tool_name: str, args: dict):
+	doctype, name = args.get("doctype"), args.get("name")
+	guard.check(doctype, PTYPES.get(tool_name, "write"), name if tool_name != "create_document" else None)
+	if tool_name in ("create_document", "update_document"):
+		check_values(doctype, args.get("values") or {}, new=tool_name == "create_document")
+
+
+def _extension_precheck(tool_name: str, spec: dict, args: dict):
+	if not spec.get("own_guard"):
+		guard.check(spec["doctype"], "write" if spec["operation"] == "update" else spec["operation"])
+	if spec.get("precheck"):
+		_call(spec, "precheck", tool_name, args)
+
+
+def _call(spec: dict, key: str, tool_name: str, args: dict):
+	return spec[key](tool_name, args) if spec.get("by_name") else spec[key](args)
 
 
 def check_values(doctype: str, values: dict, new: bool):
@@ -76,7 +135,15 @@ def _check_rows(doctype: str, df, rows):
 
 
 def preview_html(tool_name: str, args: dict) -> str:
-	"""The actual arguments, and for updates the current values next to the new ones."""
+	"""The actual arguments, and for updates the current values next to the new ones. An extension write
+	tool's `preview(args)` gives (headers, rows); the cells are escaped here like every other card."""
+	if (spec := spec_of(tool_name)) and spec.get("preview"):
+		try:
+			headers, rows = _call(spec, "preview", tool_name, args)
+		except (frappe.PermissionError, frappe.ValidationError, frappe.DoesNotExistError):
+			frappe.clear_messages()
+		else:
+			return _table(headers, rows)
 	if tool_name == "update_document" and isinstance(args.get("values"), dict):
 		return _diff(args["doctype"], args.get("name"), args["values"])
 	if tool_name == "create_document" and isinstance(args.get("values"), dict):

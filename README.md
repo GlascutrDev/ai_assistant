@@ -8,7 +8,14 @@ With the assistant you can:
 - ask "how do I…" questions about your company's knowledge base
 - prepare changes (create, update, submit, cancel, delete, comment, assign, workflow actions, attach files). **Every change waits for your approval.**
 - attach files (images, PDF, Word, Excel, CSV, text, audio) and ask about them
+- work with spreadsheets (.xlsx, .xls, .csv, .tsv): "total Amount by Region", "which rows have no Qty", "how many orders in February". The assistant counts every row exactly. It can also make a new Excel or CSV file for you to download, for example a summary, a cleaned copy or a list of records. You approve the file first. Your original file never changes. The assistant does not run macros or calculate formulas: formula cells show the value Excel last saved.
 - speak your question instead of typing it
+- change or create many records at once ("set priority High on these 12 ToDos"). You see every record in one approval card. All of them change, or none do.
+- send an email, optionally linked to a record and with files attached. You see the whole email and approve it first.
+- ask it to remember things ("remember that I work in the Toronto warehouse"). You approve each memory. Open **AI Memory** in Desk to see, change or delete your memories. Only you see your own memories. A System Manager can add **Shared** memories that every user's assistant reads.
+- rate an answer with thumbs up or down. When you give a thumbs down with a comment, the comment is saved as one of your memories, so the assistant does better next time.
+- choose an **agent** when you start a chat, for example a "Sales helper" or a "Policies" agent. A System Manager sets up agents in **AI Agent**: their instructions, which tools they may use, which knowledge they search, and which roles see them. An agent can only do less than the general assistant, never more. It still works with your permissions, and every change still waits for your approval. An automation can also use an agent.
+- run the assistant automatically (**AI Automation**): on a schedule, for example "every weekday at 9:00 summarize yesterday's new leads", or when a record is created, changed, submitted or cancelled. It runs with your permissions. You get a notification, and an email of the answer if you want it. Any change it wants to make still waits for your approval in the chat. A System Manager must turn on **Automations Enabled** in the settings first.
 
 ### Installation
 
@@ -47,7 +54,7 @@ Other settings:
 | Tab | What you set |
 |---|---|
 | Limits and Safety | Model and tool calls per answer, rows per read, daily tokens per user, monthly cost per site, read-only mode, record types the assistant may never touch, how long an approval stays open |
-| Knowledge | Turn on the knowledge base, choose record types to index, chunk size, results per search. Add articles in **AI Knowledge Document**. After you change the embedding model, use **Actions → Rebuild Knowledge Index**. |
+| Knowledge | Turn on the knowledge base, choose record types to index, chunk size, results per search. Add articles in **AI Knowledge Document**. An article can also point to a public **Web Page** (https). The assistant reads it when you save, and again every day. Internal and private addresses are refused. After you change the embedding model, use **Actions → Rebuild Knowledge Index**. |
 | Voice and Files | Turn voice and attachments on, file types, size limits, recording length, send the transcript at once or let the user check it first |
 | LangSmith | Tracing to LangSmith (optionally without message content), the evaluation dataset and user, pass marks |
 | Retention | How many days to keep conversations (0 = keep) |

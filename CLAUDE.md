@@ -26,17 +26,25 @@ agent/graph.py  compiled create_agent graph
 tools/ (session user; guard.py first; AI Audit Log always)
    meta: find_doctypes · describe_doctype
    read: list_documents · count_documents · aggregate · get_document · run_report · search_links
-   extension (hook ai_assistant_read_tools, read only): e.g. today_ops.ai_tools.today_board
+   extension read  (hook ai_assistant_read_tools): e.g. today_ops.ai_tools.today_board
+   extension write (hook ai_assistant_write_tools, metadata["ai_assistant"] = operation · doctype ·
+         precheck · preview; interrupted like core writes): e.g. today_ops.ai_tools.stage_week_boards
+   memory: services/memory.py ─► prompt block (Shared + own Personal, data not instructions)
+   agent:  services/agents.py ─► load (access every turn) · filter_tools (subset only) ·
+           knowledge_scope (search_knowledge sources) · prompt_block (after the rules); main model only
    rag:  search_knowledge ─► rag/store.py (ai_embedding VECTOR, VEC_DISTANCE_COSINE) ─► per-doc permission filter
    files: read_attachment (File permission) · search_attachments (conversation-scoped chunks)
+   spreadsheets: inspect_spreadsheet · query_spreadsheet (attachments/sheets + sheet_query: declarative,
+         no code runs) · write_spreadsheet (write: new private chat .xlsx/.csv, source never changed)
    write (interrupt → AI Action Request → user decides → resume):
          create · update · submit · cancel · delete · add_comment · assign_to · apply_workflow_action · attach_file
+         · create/update/delete_documents (≤ 50, all or nothing) · send_email · remember · forget_memory
 evals/runner.py (test site only) ─ LangSmith dataset ─► same graph, target = MAIN or candidate,
    writes captured + rejected ─► evaluators: safety checks + LLM-as-judge on TEST/EVALUATION model
    ─► LangSmith experiment + AI Evaluation Run
 llm/registry.py  get_main_model · get_evaluation_model · get_embeddings (cached on Settings.modified)
 llm/speech.py    transcribe() on the speech model (OpenAI / OpenAI-compatible Whisper / Gemini)
-attachments/     upload checks ─► extract (image · pdf · docx · xlsx/csv · text · audio) ─► native | text | indexed
+attachments/     upload checks ─► extract (image · pdf · docx · xlsx/xls/csv/tsv · text · audio) ─► native | text | indexed
    Anthropic · OpenAI · Moonshot (openai + base_url) · Gemini · DeepSeek · Mistral · Ollama · OpenAI-compatible
  ┌── DocTypes (ai_assistant/ai_assistant/doctype) ─────────────────────────────────────────────┐
  │ AI Assistant Settings (Single) ─┬ AI Provider Credential (child: provider, api_key, base_url) │
@@ -44,11 +52,18 @@ attachments/     upload checks ─► extract (image · pdf · docx · xlsx/csv 
  │                                 ├ AI Allowed Role (child) · AI Knowledge Source (child)        │
  │ AI Knowledge Document · AI Conversation ─► AI Message (append-only) · AI Attachment (─► File)   │
  │ AI Action Request · AI Audit Log (append-only) · AI Usage Log (append-only) · AI Evaluation Run│
+ │ AI Memory (Personal / Shared) · AI Feedback (per answer) · AI Automation (owner, cron | doc event)│
+ │ AI Agent (instructions · allowed_tools · knowledge_sources · roles · read_only · one default)   │
+ │   └ AI Agent Knowledge (child) ── AI Conversation.agent, AI Automation.agent (fixed per thread) │
  │ raw tables (after_migrate DDL): ai_checkpoint · ai_checkpoint_write · ai_checkpoint_blob ·      │
  │                                 ai_embedding                                                  │
  └──────────────────────────────────────────────────────────────────────────────────────────────┘
  doc_events["*"] on_update/on_trash ─► rag.indexer.sync (only for enabled sources)
- tasks.py: hourly expire action requests · daily purge conversations, reindex
+ doc_events["*"] after_insert/on_update/on_submit/on_cancel ─► services.automations.on_doc_event
+    ─► enqueue services.automation_run.run (as the owner) ─► one normal turn ─► notify / email
+ rag/web.py: AI Knowledge Document.source_url ─► SSRF-checked https fetch ─► url_text ─► sync
+ tasks.py: every minute run_due_automations · hourly expire action requests ·
+           daily purge conversations, reindex, refresh knowledge pages
 ```
 
 Update this diagram whenever you add a DocType, tool, node, middleware, evaluator, endpoint group, or job.
@@ -76,9 +91,9 @@ Update this diagram whenever you add a DocType, tool, node, middleware, evaluato
 
 ## Non-negotiable rules
 
-1. **The agent is the user.** Tools run under `frappe.session.user` set by the job runner. Never `ignore_permissions=True`, `frappe.flags.ignore_permissions`, `frappe.set_user`, `frappe.db.sql`, `frappe.db.set_value`, `frappe.db.count`/`get_value` on user-requested DocTypes, `eval`/`exec`/`safe_exec`, or calls to arbitrary methods from a tool.
+1. **The agent is the user.** Tools run under `frappe.session.user` set by the job runner (an automation run switches to its owner in `automation_run.run`, SPEC §7.3; nowhere else). Never `ignore_permissions=True`, `frappe.flags.ignore_permissions`, `frappe.set_user`, `frappe.db.sql`, `frappe.db.set_value`, `frappe.db.count`/`get_value` on user-requested DocTypes, `eval`/`exec`/`safe_exec`, or calls to arbitrary methods from a tool.
 2. **Reads go through permission-applying APIs:** `frappe.get_list` (not `get_all`), `doc.check_permission("read")` + `doc.apply_fieldlevel_read_permissions()`, `frappe.desk.query_report.run`. Strip Password and hidden fields before returning.
-3. **Every write pauses for confirmation.** A new write tool must be added to the `HumanInTheLoopMiddleware` `interrupt_on` map and to `tools/__init__.py` `WRITE_TOOLS`. Re-run `guard.py` after approval.
+3. **Every write pauses for confirmation.** A new write tool must be added to the `HumanInTheLoopMiddleware` `interrupt_on` map and to `tools/__init__.py` `WRITE_TOOLS` (or, from another app, to the `ai_assistant_write_tools` hook with `metadata["ai_assistant"]`). Re-run `guard.py` after approval.
 4. **Only the conversation's user decides its action requests.** Check it in `services/actions.py`, not in JS.
 5. **Every tool call writes `AI Audit Log`**, including denied and failed calls. Writes also add a timeline comment on the target.
 6. **Blocked DocTypes** (SPEC §7.3 + Settings) are refused by `guard.py` for every tool, and hidden from `find_doctypes`.

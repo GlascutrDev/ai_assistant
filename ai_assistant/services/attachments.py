@@ -4,7 +4,7 @@ import frappe
 from frappe import _
 from frappe.utils import add_days, now_datetime
 
-from ai_assistant.attachments import processor, upload
+from ai_assistant.attachments import extractors, processor, upload
 from ai_assistant.persistence import schema
 from ai_assistant.persistence.schema import EMBEDDING_TABLE
 from ai_assistant.services import settings
@@ -44,6 +44,40 @@ def create(conv, file_name: str, data: bytes, voice: bool = False):
 			"status": "Uploaded",
 		}
 	).insert(ignore_permissions=True)
+
+
+def create_generated(conv, file_name: str, data: bytes):
+	"""A file the assistant made (SPEC §6.8.1): same checks as an upload, private on the conversation,
+	Ready and already sent, so it is never offered again as a new upload."""
+	checked = upload.check(file_name, data)
+	text = processor.display_text(extractors.extract(checked.kind, checked.data, checked.file_name).text)
+	file = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": checked.file_name,
+			"content": checked.data,
+			"is_private": 1,
+			"attached_to_doctype": "AI Conversation",
+			"attached_to_name": conv.name,
+		}
+	).insert(ignore_permissions=True)
+	att = frappe.get_doc(
+		{
+			"doctype": "AI Attachment",
+			"conversation": conv.name,
+			"user": frappe.session.user,
+			"file": file.name,
+			"file_name": checked.file_name,
+			"mime_type": checked.mime_type,
+			"size_bytes": len(checked.data),
+			"kind": checked.kind,
+			"status": "Ready",
+			"delivery": "text",
+			"extracted_text": text,
+			"sent": 1,
+		}
+	).insert(ignore_permissions=True)
+	return att, file
 
 
 def read_upload(stream) -> bytes:

@@ -44,7 +44,8 @@ The assistant:
 ### Out of scope (v1)
 - Raw SQL, code execution, or calls to arbitrary whitelisted methods from the agent
 - Acting as any user other than the signed-in user; acting with Administrator rights
-- Sending email or messages outside the system (WhatsApp, SMS). Comments and assignments are in scope.
+- Messages outside the system other than email (WhatsApp, SMS). Comments and assignments are in scope. **[Decision, 2026-11-08]** Email is in scope: `send_email`, always confirmed (§7.2).
+- From the Flow comparison (2026-11-08), not built because they break rules 1 or 3: `execute` (sandboxed Python), `run_action` on any whitelisted method, inline-script tools, Python trigger conditions, building DocTypes (blocked), trigger `auto_approve` and `run_as` another user. Configurable agents were added on 2026-11-08 (§6.11).
 - Spoken replies (text-to-speech) and live two-way voice (§15 Q12)
 - Video files
 - A Vue/frappe-ui SPA. **[Decision]** The UI is Desk JS, because the assistant must sit next to the forms the user works in.
@@ -196,11 +197,11 @@ Any number of profiles may exist. Only the ones named in `main_model`, `evaluati
 
 ### 4.6 AI Knowledge Document
 Uploaded or written reference text: SOPs, policies, how-to notes.
-Fields: `title`, `content` (Text Editor), `attachment` (Attach; PDF, DOCX, TXT, MD), `visible_to_roles` (Table MultiSelect → `AI Allowed Role`; empty = every assistant user), `enabled`, `last_indexed`.
+Fields: `title`, `content` (Text Editor), `attachment` (Attach; PDF, DOCX, TXT, MD), `source_url` (an https web page, §8.1.1), `url_text` / `url_fetched_on` / `url_error` (read-only), `visible_to_roles` (Table MultiSelect → `AI Allowed Role`; empty = every assistant user), `enabled`, `last_indexed`.
 Permissions: System Manager write; others read only through RAG.
 
 ### 4.7 AI Conversation
-`title`, `user` (Link User, set on insert, read-only), `status` (`Active`, `Waiting for confirmation`, `Running`, `Archived`), `main_model` (profile ID used last), `total_input_tokens`, `total_output_tokens`, `total_cost`, `last_message_at`, `context_doctype`, `context_name` (the Desk form open when it started).
+`title`, `user` (Link User, set on insert, read-only), `status` (`Active`, `Waiting for confirmation`, `Running`, `Archived`), `main_model` (profile ID used last), `total_input_tokens`, `total_output_tokens`, `total_cost`, `last_message_at`, `context_doctype`, `context_name` (the Desk form open when it started), `automation` (Link → `AI Automation`, set when an automation started it, §6.10).
 Permissions: owner only (`if_owner`) for AI Assistant User; System Manager read all. **[Decision]** A permission query hook also limits list views to `user = session user`, so sharing cannot expose a conversation.
 
 ### 4.8 AI Message — append-only
@@ -236,6 +237,23 @@ Created by `install.after_migrate` with raw DDL, because DocType JSON cannot dec
 One file added to a chat message, or one voice recording.
 Fields: `conversation`, `user`, `file` (Link → File; private, attached to the `AI Conversation`), `file_name`, `mime_type`, `size_bytes`, `kind` (`image`, `pdf`, `document`, `spreadsheet`, `text`, `audio`, `voice`), `status` (`Uploaded`, `Processing`, `Ready`, `Failed`), `delivery` (`native`, `text`, `indexed`; §6.8), `extracted_text` (Long Text, truncated copy for display), `page_count`, `duration_seconds`, `transcript` (voice and audio), `error`.
 Permissions: same as `AI Conversation` (owner only; System Manager read). Deleted with its conversation by the retention job, together with its `File` and its conversation chunks.
+
+### 4.15 AI Memory (2026-11-08)
+A fact the assistant keeps across conversations (§6.9). Fields: `content` (1–500 characters), `scope` (`Personal`, `Shared`), `user` (the owner of a Personal memory; empty for Shared), `status` (`Active`, `Archived`), `source` (`Manual`, `Assistant`, `Feedback`), `conversation`.
+Permissions: a Personal memory is its user's only (read, edit, delete in Desk); a Shared memory is read by every assistant user and written by a System Manager only (`services.memory.validate`, `permissions.memory_has_permission`).
+
+### 4.16 AI Feedback (2026-11-08)
+A user's rating of one assistant answer: `message` (Link → `AI Message`), `conversation`, `user`, `rating` (`Up`, `Down`), `comment`, `model`. One row per answer and user; rating again replaces it. Owner only; System Manager reads all. Created only by `chat.rate_message`.
+
+### 4.17 AI Automation (2026-11-08)
+Runs the assistant as its owner (§6.10). Fields: `title`, `enabled`, `user` (owner, read-only), `event` (`Schedule`, `Document Event`), `cron`, `document_type`, `doc_event` (`After Insert`, `On Update`, `On Submit`, `On Cancel`), `filters_json` (Frappe filters), `prompt`, `email_result`, and read-only `last_run_at`, `last_status` (`Answered`, `Waiting for approval`, `Failed`, `Skipped`), `last_conversation`, `last_error`.
+Permissions: owner only; System Manager all. At most 10 per user.
+
+Settings (§4.1) add `memory_enabled` (default on) and `automations_enabled` (default off).
+
+### 4.18 AI Agent (2026-11-08)
+A named assistant (§6.11). Fields: `title` (unique; also the name), `enabled`, `is_default` (at most one; setting it clears the others), `read_only`, `description`, `roles` (Table MultiSelect → `AI Allowed Role`; empty = every assistant user), `instructions` (at most 10,000 characters), `allowed_tools` (one tool name per line; empty = every tool), `knowledge_sources` (Table MultiSelect → child `AI Agent Knowledge.source_doctype`; each must be an enabled knowledge source or `AI Knowledge Document`; empty = the whole knowledge base).
+Permissions: System Manager writes; other users read only the enabled agents their roles allow (`permissions.agent_has_permission`, `agent_query`). `AI Conversation.agent` and `AI Automation.agent` link to it.
 
 ---
 
@@ -381,7 +399,7 @@ Speech model (`llm/speech.py`, `transcribe(file, language) -> Transcript(text, l
 | image (png, jpg, webp, gif) | — (resize to max 2048 px, strip EXIF) | `native` image content block when the main model `supports_images`; otherwise the upload is refused with "The current model cannot read images." |
 | pdf | text with `pypdf`; page count | `native` file block when the model `supports_pdf` and the PDF has ≤ 100 pages; otherwise `text` |
 | document (docx) | `python-docx` paragraphs and tables | `text` |
-| spreadsheet (xlsx, csv) | `openpyxl` / `csv`: per sheet, header + rows as a Markdown table | `text` |
+| spreadsheet (xlsx, xls, csv, tsv; xlsm when an admin allows it) | `attachments/sheets.py` (`openpyxl`, `xlrd`, `csv`): per sheet, header + rows as a Markdown table (first 2000 rows) | `text` (or `indexed`); the spreadsheet tools of §6.8.1 read every row |
 | text (txt, md, json) | decode UTF-8 | `text` |
 | audio (mp3, m4a, wav, webm, ogg) | transcript by the speech model | `text` (the transcript) |
 
@@ -394,7 +412,44 @@ Speech model (`llm/speech.py`, `transcribe(file, language) -> Transcript(text, l
 
 **Using files in writes.** The main model can turn an attachment into a write proposal, e.g. create a Purchase Invoice draft from a bill image or update Items from a spreadsheet. These are normal write tools with confirmation (§7.2). `attach_file` copies a chat attachment onto a document as a new private `File` after confirmation.
 
+### 6.8.1 Spreadsheets: read, analyze, write (2026-11-08)
+
+**[Decision]** The assistant reads, analyzes and writes spreadsheet files with three tools. It never runs code. "Execute" means a declarative query, and formulas are never calculated on the server (rule 1).
+- **Read** (`attachments/sheets.read`): `.xlsx`, `.xlsm` (`openpyxl`, `data_only`: formula cells give the value Excel last saved; macros never run), `.xls` (`xlrd`), `.csv`, `.tsv`. Limits: 100,000 rows, 200 columns, 50 sheets. Zip-based files pass `check_zip`. `.ods` is not supported: it needs a new package (ask first).
+- **Analyze** (`attachments/sheet_query.py`, tools `inspect_spreadsheet`, `query_spreadsheet`): a column profile, then filters (`=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `not contains`, `starts with`, `in`, `not in`, `is empty`, `is not empty`), `group_by`, aggregates (`count`, `count_distinct`, `sum`, `avg`, `min`, `max`, `median`), sort and limit (at most 500 rows returned) over every row. Text such as "1,234", "$5", "15%" and "(30)" counts as a number. Read tools: no confirmation, offered also in read-only mode.
+- **Write** (tool `write_spreadsheet`, §7.2): a new `.xlsx` or `.csv` from new sheets, or a copy of a source file with cell edits, appended rows and new or replaced sheets. The source is never changed. The file passes the upload checks (`upload.check`) and is saved as a private `File` on the conversation plus a Ready, sent `AI Attachment` (`services.attachments.create_generated`). The user downloads it from `download_url`, or puts it on a record with `attach_file`.
+- **Formula safety:** text is always stored as text. A formula is given explicitly as `{"formula": "=..."}`, `.xlsx` only, and only with the functions in `sheets.SAFE_FUNCTIONS`. Links to other workbooks, DDE (`|`), URLs and drive paths are refused. In `.csv`, text that starts with `=`, `+`, `@`, tab, CR or a non-number `-` gets a leading `'` (CSV injection).
+- **Sources:** a chat attachment of the user (same conversation in a turn), or a `File` on a record, through the `read_attachment` checks (`tools.files.file_content`).
+- Patch `allow_xls_tsv` adds `xls` and `tsv` to a site's stored `allowed_file_types` when that list already has `xlsx`.
+
+### 6.9 Memory and feedback (2026-11-08, from the Flow comparison)
+**[Decision]** Flow's agent memory and thumbs feedback, changed to fit this app's rules:
+- Tools `remember(content, memory_id)` and `forget_memory(memory_id)` are write tools, so each save is confirmed (rule 3). The model can write only the user's own Personal memories. Flow lets an agent write shared memory and turns down-votes into shared memory; here that would let one user's chat change another user's assistant, so Shared memories are written by a System Manager only.
+- Every turn, `memory.prompt_block` adds at most 30 Active memories (Shared, then the user's own, newest first) to the system prompt, labelled as data, not instructions (rule 10). At most 50 Active Personal memories per user.
+- Thumbs up/down under each answer calls `chat.rate_message`. A Down comment also becomes a Personal memory (`source = Feedback`), so later answers avoid the same mistake. Ratings show again when the conversation loads.
+- `memory_enabled` off removes the tools and the prompt block.
+
+### 6.10 Automations (2026-11-08, from the Flow comparison)
+**[Decision]** Flow Trigger, changed to fit this app's rules:
+- **When:** `Schedule` (cron in the system time zone; at most every 15 minutes; `tasks.run_due_automations` every minute queues each due one once) or `Document Event` (`doc_events["*"]` after_insert, on_update, on_submit, on_cancel). The watched DocType must not be blocked or Single.
+- **Conditions are filters, not code:** `filters_json` is checked with `frappe.get_list(..., user=owner)`, and the owner must be able to read the record. Flow's Python `condition` is not supported (rule 1).
+- **Runs as the owner only:** the job switches to `AI Automation.user`, the way the job runner does for a chat turn. There is no `run_as` another user (rule 1).
+- **No auto-approve:** each write still pauses (rule 3). The run ends `Waiting for approval` and the owner gets a Notification Log with a link to the conversation.
+- **Run:** a new conversation of the owner (`automation` set; the record linked for document events), one turn of the normal graph, then a notification and, with `email_result`, an email of the answer to the owner.
+- **Limits:** `automations_enabled` (default off), 10 automations per user, 12 runs per automation per hour, one queued job per automation and record. Changes made inside a run (`frappe.flags.ai_automation`) and changes to `AI *` DocTypes never start an automation.
+
 ---
+
+### 6.11 Agents (2026-11-08, from Flow Agent)
+**[Decision]** An agent narrows the assistant; it never widens it.
+- **Choice:** the chat shows a picker for a new conversation (`get_bootstrap.agents`: enabled agents the user's roles allow, default first; "General assistant" only when there is no default). `send_message`, `upload_attachment` and `transcribe` take `agent` when they create the conversation. Without one, the default agent applies when the user can use it. The agent is fixed for the conversation's life and shown in its header.
+- **Tools:** `agents.filter_tools` keeps only `allowed_tools` from the tools the turn already offers (Settings flags, read-only mode). `read_only` also removes every write tool. Writes that stay are confirmed as always.
+- **Knowledge:** `search_knowledge` searches only `knowledge_sources` (`FrappeVectorStore(sources=...)`), still with the per-document permission filter (rule 9).
+- **Instructions** go into the system prompt after the rules and the injection wording, labelled as adding to the rules and never overriding them (rule 10). Company instructions in Settings still apply.
+- **Model:** every agent uses the main model. Flow lets each agent choose a model; here that would skip the evaluation gate of the main model (rule 8).
+- **Memory** stays per user across agents (§6.9).
+- **Access is checked on every turn:** a disabled or deleted agent, or one the user's roles no longer allow, stops its conversations (`AgentUnavailableError`; the user starts a new one). Automations (§6.10) can name an agent the owner can use.
+- Evaluations (§11.2) run without an agent.
 
 ## 7. Tools and safety
 
@@ -413,6 +468,8 @@ Speech model (`llm/speech.py`, `transcribe(file, language) -> Transcript(text, l
 | `search_knowledge(query)` | §8.3 | `top_k` |
 | `read_attachment(file)` | A chat attachment of this conversation, or a `File` attached to a document: `frappe.get_doc("File", file)` → `check_permission("read")` (Frappe checks the parent document). Then the §6.8 processor; images go back as an image block when the model supports images. | `max_attachment_text_chars` |
 | `search_attachments(query)` | Vector search over `ai_embedding` rows with `conversation` = this conversation | `top_k` |
+| `inspect_spreadsheet(file)` | Same file checks as `read_attachment`; sheets, row counts, columns, column profile, first 5 rows (§6.8.1) | `max_tool_result_chars` |
+| `query_spreadsheet(file, sheet, columns, filters, group_by, aggregates, sort, limit, header_row)` | Same file checks; declarative query over every row (§6.8.1) | 500 rows |
 
 ### 7.2 Write tools (always confirmed)
 
@@ -426,6 +483,10 @@ Speech model (`llm/speech.py`, `transcribe(file, language) -> Transcript(text, l
 | `assign_to(doctype, name, users, description, date)` | `frappe.desk.form.assign_to.add` |
 | `apply_workflow_action(doctype, name, action)` | `frappe.model.workflow.apply_workflow` |
 | `attach_file(attachment, doctype, name)` | `check_permission("write")` on the target, then a new private `File` with `attached_to_doctype/name` and the attachment's content |
+| `write_spreadsheet(file_name, sheets_data, source, edits, append)` | `guard.check("File", "create")`, then a new `.xlsx`/`.csv` as a private chat file (§6.8.1). The card lists each sheet with its row count and first row, and each cell edit. Offered only when attachments are on. |
+| `create_documents(doctype, records)` · `update_documents(doctype, names, values)` · `delete_documents(doctype, names)` | Up to 50 records of one DocType in one card (each record listed; updates show now and new). Guard and field checks per record. All or nothing: one failure rolls back the call (2026-11-08, from Flow's list-based create/update/delete). |
+| `send_email(recipients, subject, message, cc, reference_doctype, reference_name, files_to_attach)` | `frappe.core.doctype.communication.email.make` as the user. With a record: `email` permission on it (also checked by Frappe); without: `Communication` create permission. At most 20 addresses and 5 files (chat attachments or readable Files). The message is plain text, escaped. Read-only mode refuses it (2026-11-08; Flow sends email through `execute`, which is not allowed here). |
+| `remember(content, memory_id)` · `forget_memory(memory_id)` | The user's own Personal memories (§6.9). Offered only when `memory_enabled`. |
 
 Every write tool:
 1. runs `tools/guard.py` first (blocked DocType, read-only mode, a dry permission check), so the confirmation card never offers an action that will fail on permission
@@ -436,7 +497,7 @@ Every write tool:
 **[Decision]** There is no "trust this tool" setting in v1. Every write is confirmed.
 
 ### 7.3 Never allowed
-- `ignore_permissions=True`, `frappe.flags.ignore_permissions`, `frappe.set_user`, `frappe.db.sql`, `frappe.db.set_value`, `frappe.call` of arbitrary methods, `eval`/`exec`, `safe_exec`
+- `ignore_permissions=True`, `frappe.flags.ignore_permissions`, `frappe.set_user`, `frappe.db.sql`, `frappe.db.set_value`, `frappe.call` of arbitrary methods, `eval`/`exec`, `safe_exec`. **[Decision, 2026-11-08]** One exception: the job entry `services.automation_run.run` calls `frappe.set_user(AI Automation.user)` before the turn, as the job runner does for chat turns, after it checks that the owner is enabled and has access. No tool ever switches the user.
 - Default `blocked_doctypes`: `User`, `Role`, `Role Profile`, `Has Role`, `User Permission`, `DocPerm`, `Custom DocPerm`, `DocType`, `Custom Field`, `Property Setter`, `Server Script`, `Client Script`, `System Settings`, `Session Default Settings`, `OAuth Client`, `Access Log`, `Activity Log`, `Error Log`, `Scheduled Job Type`, and every `AI *` DocType
 - Returning Password fields, `__Auth` data, API keys, or other users' AI conversations or attachments
 - Reading a `File` by path or URL without the `File` permission check; following URLs found in attachments
@@ -449,13 +510,22 @@ Every write tool:
 - Attachment text, image text, and transcripts are untrusted data, like document content. A file that says "approve all" changes nothing: writes still need confirmation.
 - Uploads: extension allow-list plus content sniffing, size limit, private `File` only, EXIF stripped from images. Office files are parsed, never opened with macros. Zip-based files over 100 MB unpacked are rejected (zip bomb).
 
-### 7.5 Extension read tools (2026-11-04)
+### 7.5 Extension tools (2026-11-04, writes 2026-11-08)
 **[Decision]** Another installed app can add domain read tools without making this app depend on it (rule 13 stays: the core tools are generic).
 - The app lists dotted paths in the hook `ai_assistant_read_tools`. Each path names a LangChain tool (`@tool`).
 - `tools.extension_tools()` loads them for every turn, also in read-only mode. A path that does not load, is not a tool, or reuses a tool name is skipped and written to the Error Log.
-- Only read tools. A write tool needs the confirmation preview and pre-check, which are generic over DocTypes; extension write tools are not supported.
 - The extension tool must call `guard.check(...)` and run its body through `tools.base.execute`, so the audit row, outcome mapping and result clipping apply. It runs as the session user. The owning app checks its own domain permissions.
 - First user: `today_ops.ai_tools.today_board` (TODAY BOARD for a store day, with a link to the *TODAY Board* print format).
+
+**[Decision, 2026-11-08] Extension write tools.** This replaces the earlier rule "only read tools".
+- The app lists dotted paths in the hook `ai_assistant_write_tools`. Each tool sets `metadata["ai_assistant"]`:
+  - `operation`: one of `create`, `update`, `submit`, `cancel`, `delete` (the AI Action Request operation).
+  - `doctype`: the target DocType. The pre-check runs `guard.check(doctype, operation)` first, so blocked DocTypes and read-only mode still refuse it.
+  - `precheck(args)` (optional): raises a Frappe error when the write would fail. The card is then Failed with the reason.
+  - `preview(args)` (optional): returns `(headers, rows)`. The card renders and escapes the cells. The app never sends HTML.
+- `tools.write_tool_names()` includes these tools. So `HumanInTheLoopMiddleware` interrupts them, evaluations reject them, and read-only mode removes them. A tool without valid metadata is skipped and logged.
+- The tool body runs only after approval, through `tools.base.execute(..., savepoint=True)`. It reads chat files only through `tools.files.attachment_content(attachment, runtime)` (own attachment, same conversation).
+- First user: `today_ops.ai_tools.stage_week_boards` (Draft TODAY BOARDs for 7 days from an attached Base Schedule spreadsheet, today_ops SPEC §23.10).
 
 ---
 
@@ -463,8 +533,14 @@ Every write tool:
 
 ### 8.1 Sources
 - DocTypes listed in `knowledge_sources` (e.g. `Item`, `Project`, `Issue`, `Note`, `Help Article`)
-- `AI Knowledge Document` rows (text and parsed attachments)
+- `AI Knowledge Document` rows (text, parsed attachments, and web pages, §8.1.1)
 - **[Decision]** Not the full transactional ledger. The read tools answer data questions; RAG answers "how/what/why" questions and finds records by meaning.
+
+### 8.1.1 Web pages (2026-11-08, from Flow's URL knowledge source)
+- A System Manager sets `source_url` on an `AI Knowledge Document`. Saving it queues `rag.web.refresh`. A daily job (`tasks.refresh_knowledge_pages`) fetches every enabled page again and re-indexes it only when the text changed.
+- **SSRF limits** (`rag.web.check_url`): https on port 443 only, no user name or password in the address, and every address the host resolves to must be global (no loopback, private, link-local, reserved or multicast). Redirects are followed by hand, at most 3, and each target is checked again. Timeout 5 s connect and 15 s read, at most 2 MB, only HTML, plain text and Markdown. [Verify] A DNS answer can change between the check and the connection (DNS rebinding); the risk is limited because only a System Manager can give the address.
+- HTML becomes text without scripts, styles, navigation, headers and footers (the `main` or `article` element when there is one). The text is stored in `url_text`, so the indexed content can be seen. A failure is kept in `url_error`, and the last good text stays indexed.
+- Addresses found in attachments or tool results are never fetched (§7.3).
 
 ### 8.2 Indexing (`rag/indexer.py`)
 - Split with `RecursiveCharacterTextSplitter(chunk_size, chunk_overlap)`.
@@ -564,6 +640,7 @@ All endpoints: `@frappe.whitelist(methods=[...])`, type hints on every argument,
 | `chat.list_conversations(limit: int = 20, start: int = 0)` | GET | Own conversations |
 | `chat.get_conversation(conversation: str)` | GET | Messages + pending action requests |
 | `chat.archive_conversation(conversation: str)` | POST | |
+| `chat.rate_message(message: str \| int, rating: str, comment: str \| None)` | POST | `Up` or `Down` on an assistant answer of the user's own conversation (§6.9). Returns `{feedback, rating, memory}`. 60 per minute. |
 | `chat.upload_attachment(conversation: str \| None)` + multipart `file` | POST | Checks (§6.8), creates the conversation if needed, saves `File` + `AI Attachment`, enqueues processing. Returns `{conversation, attachment, status}`. |
 | `chat.remove_attachment(attachment: str)` | POST | Only before the message is sent |
 | `chat.transcribe(conversation: str \| None)` + multipart `audio` | POST | Voice prompt (§6.7). Returns `{conversation, attachment, text, language, duration_seconds}`. |

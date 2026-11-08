@@ -45,10 +45,11 @@ export class FilesExtension {
 		this.items.push(item);
 		this.render();
 		try {
-			const r = await api.upload(this.panel.conversation, file);
+			const r = await api.upload(this.panel.conversation, file, "file", "upload_attachment", this.panel.agent_args());
 			Object.assign(item, { name: r.attachment, status: r.status });
 			if (!this.panel.conversation) {
 				this.panel.conversation = r.conversation;
+				this.panel.render_agent_bar(this.panel.agent_title());
 				this.panel.on_conversation?.({ name: r.conversation });
 			}
 		} catch (e) {

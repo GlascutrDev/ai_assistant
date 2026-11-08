@@ -1,3 +1,5 @@
+import { api } from "./api";
+
 const esc = (text) => frappe.utils.escape_html(text == null ? "" : String(text));
 
 const TOOL_LABELS = {
@@ -12,6 +14,8 @@ const TOOL_LABELS = {
 	search_knowledge: __("Searching the knowledge base"),
 	read_attachment: __("Reading a file"),
 	search_attachments: __("Searching files"),
+	inspect_spreadsheet: __("Reading a spreadsheet"),
+	query_spreadsheet: __("Analyzing a spreadsheet"),
 };
 
 export function tool_label(name) {
@@ -34,6 +38,7 @@ export function message(m) {
 		if (m.input_mode === "voice") $row.find(".ai-bubble").prepend(frappe.utils.icon("mic", "xs"));
 	} else if (m.role === "assistant") {
 		$row.append($(`<div class="ai-bubble"></div>`).append(markdown(m.content)));
+		if (m.name) $row.append(feedback(m));
 		if (m.langsmith_run_id) {
 			$row.append(`<div class="ai-meta text-muted small">${__("Trace")}: ${esc(m.langsmith_run_id)}</div>`);
 		}
@@ -41,6 +46,33 @@ export function message(m) {
 		$row.append($(`<div class="ai-note text-muted small"></div>`).text(m.content));
 	}
 	return $row;
+}
+
+function feedback(m) {
+	const $bar = $(`<div class="ai-feedback text-muted small"></div>`);
+	const button = (rating, icon, title) =>
+		$(`<button class="btn btn-xs btn-link" aria-label="${esc(title)}" title="${esc(title)}"></button>`)
+			.toggleClass("text-primary", m.rating === rating)
+			.attr("aria-pressed", m.rating === rating ? "true" : "false")
+			.append(frappe.utils.icon(icon, "xs"))
+			.on("click", () => rate(m, rating, $bar));
+	return $bar.append(button("Up", "thumbs-up", __("Good answer")), button("Down", "thumbs-down", __("Bad answer")));
+}
+
+function rate(m, rating, $bar) {
+	const send = (comment) =>
+		api.rate(m.name, rating, comment).then((r) => {
+			m.rating = rating;
+			$bar.replaceWith(feedback(m));
+			if (r.memory) frappe.show_alert({ message: __("Saved to your memories"), indicator: "green" });
+		});
+	if (rating === "Up") return send(null);
+	frappe.prompt(
+		{ fieldname: "comment", fieldtype: "Small Text", label: __("What was wrong? (saved to your memories)") },
+		(values) => send(values.comment || null),
+		__("Bad answer"),
+		__("Send")
+	);
 }
 
 export function tool_step(name, status, error) {
@@ -94,6 +126,7 @@ function operation_label(operation) {
 		assign: __("Assign"),
 		workflow: __("Workflow action on"),
 		attach: __("Attach file to"),
+		email: __("Send email"),
 	};
 	return labels[operation] || operation;
 }

@@ -16,7 +16,9 @@
   "total_output_tokens",
   "total_cost",
   "context_doctype",
-  "context_name"
+  "context_name",
+  "automation",
+  "agent"
  ],
  "fields": [
   {
@@ -93,6 +95,22 @@
    "label": "Context Name",
    "options": "context_doctype",
    "read_only": 1
+  },
+  {
+   "fieldname": "automation",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Automation",
+   "options": "AI Automation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "agent",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Agent",
+   "options": "AI Agent",
+   "read_only": 1
   }
  ],
  "in_create": 1,
@@ -100,7 +118,7 @@
  "issingle": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-11-08 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Ai Assistant",
  "name": "AI Conversation",

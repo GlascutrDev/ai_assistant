@@ -22,3 +22,17 @@ def purge_old_conversations():
 
 	attachments.purge_old()
 	frappe.db.commit()
+
+
+def refresh_knowledge_pages():
+	from ai_assistant.rag import web
+
+	web.refresh_all()
+	frappe.db.commit()
+
+
+def run_due_automations():
+	from ai_assistant.services import automations
+
+	automations.run_due()
+	frappe.db.commit()

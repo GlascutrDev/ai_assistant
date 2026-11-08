@@ -16,6 +16,7 @@ from ai_assistant.llm.registry import ModelNotConfiguredError
 from ai_assistant.observability import tracing
 from ai_assistant.persistence import dblock
 from ai_assistant.services import actions, conversations, settings
+from ai_assistant.services.agents import AgentUnavailableError
 from ai_assistant.services.budget import BudgetExceededError
 
 PROVIDER_ERROR = "The AI provider is not responding. Try again."
@@ -41,6 +42,7 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 		conversation=conv.name,
 		lang=frappe.local.lang or "en",
 		model_profile=settings.get().main_model,
+		agent=conv.agent,
 		desk_context={"doctype": conv.context_doctype, "name": conv.context_name}
 		if conv.context_doctype
 		else None,
@@ -50,7 +52,12 @@ def run_turn(conversation: str, message: str | None = None, resume: dict | None 
 			_close_open_interrupt(ctx)
 		graph_input = Command(resume=resume) if resume else {"messages": [user_input(message)]}
 		_run_passes(conv, ctx, graph_input, publisher, message)
-	except (BudgetExceededError, ModelNotConfiguredError, ConversationTooLongError) as e:
+	except (
+		BudgetExceededError,
+		ModelNotConfiguredError,
+		ConversationTooLongError,
+		AgentUnavailableError,
+	) as e:
 		fail(conv.name, publisher, str(e))
 	except Exception as e:
 		frappe.log_error(f"AI Assistant turn failed ({conv.name})")

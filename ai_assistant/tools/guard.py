@@ -5,7 +5,7 @@ from frappe import _
 
 from ai_assistant.services import settings
 
-WRITE_PTYPES = ("write", "create", "submit", "cancel", "delete")
+WRITE_PTYPES = ("write", "create", "submit", "cancel", "delete", "email")
 
 
 class BlockedDocTypeError(frappe.PermissionError):

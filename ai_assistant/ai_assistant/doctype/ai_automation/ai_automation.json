@@ -1,0 +1,200 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-11-08 12:00:00.000000",
+ "description": "Runs the assistant on a schedule or when a record changes, as its owner.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "enabled",
+  "user",
+  "agent",
+  "column_break_event",
+  "event",
+  "cron",
+  "document_type",
+  "doc_event",
+  "filters_json",
+  "prompt_section",
+  "prompt",
+  "email_result",
+  "status_section",
+  "last_run_at",
+  "last_status",
+  "column_break_last",
+  "last_conversation",
+  "last_error"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Runs As",
+   "options": "User",
+   "read_only": 1,
+   "search_index": 1,
+   "description": "The owner. The automation acts with this user's permissions only."
+  },
+  {
+   "fieldname": "agent",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Agent",
+   "options": "AI Agent",
+   "description": "Empty: the default agent."
+  },
+  {
+   "fieldname": "column_break_event",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "event",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "When",
+   "options": "Schedule\nDocument Event",
+   "reqd": 1,
+   "default": "Schedule"
+  },
+  {
+   "depends_on": "eval:doc.event=='Schedule'",
+   "fieldname": "cron",
+   "fieldtype": "Data",
+   "label": "Schedule (cron)",
+   "description": "For example 0 9 * * 1-5 = 09:00 on weekdays, in the system time zone. At most every 15 minutes."
+  },
+  {
+   "depends_on": "eval:doc.event=='Document Event'",
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "label": "Document Type",
+   "options": "DocType"
+  },
+  {
+   "depends_on": "eval:doc.event=='Document Event'",
+   "fieldname": "doc_event",
+   "fieldtype": "Select",
+   "label": "Document Event",
+   "options": "After Insert\nOn Update\nOn Submit\nOn Cancel"
+  },
+  {
+   "depends_on": "eval:doc.event=='Document Event'",
+   "fieldname": "filters_json",
+   "fieldtype": "Code",
+   "label": "Only When (filters)",
+   "options": "JSON",
+   "description": "Frappe filters the record must match, for example {\"status\": \"Open\"}."
+  },
+  {
+   "fieldname": "prompt_section",
+   "fieldtype": "Section Break",
+   "label": "What to Do"
+  },
+  {
+   "fieldname": "prompt",
+   "fieldtype": "Long Text",
+   "label": "Instruction",
+   "reqd": 1,
+   "description": "Written like a chat message. For a document event, a link to the record is added. Every change still waits for your approval in the chat."
+  },
+  {
+   "fieldname": "email_result",
+   "fieldtype": "Check",
+   "label": "Email Me the Answer"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Last Run",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "last_run_at",
+   "fieldtype": "Datetime",
+   "label": "Last Run At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_status",
+   "fieldtype": "Select",
+   "label": "Last Status",
+   "options": "\nAnswered\nWaiting for approval\nFailed\nSkipped",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_last",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_conversation",
+   "fieldtype": "Link",
+   "label": "Last Conversation",
+   "options": "AI Conversation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_error",
+   "fieldtype": "Small Text",
+   "label": "Last Error",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-11-08 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Ai Assistant",
+ "name": "AI Automation",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 0,
+   "print": 0,
+   "read": 1,
+   "report": 0,
+   "role": "All",
+   "share": 0,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

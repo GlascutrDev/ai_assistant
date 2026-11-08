@@ -11,6 +11,7 @@ export const api = {
 	decide: (args) => post("decide_action", args),
 	cancel: (conversation) => post("cancel_turn", { conversation }),
 	archive: (conversation) => post("archive_conversation", { conversation }),
+	rate: (message, rating, comment) => post("rate_message", { message, rating, comment }),
 	remove_attachment: (attachment) => post("remove_attachment", { attachment }),
 	upload(conversation, file, field = "file", method = "upload_attachment", extra = {}) {
 		const form = new FormData();

@@ -3,7 +3,7 @@
 import frappe
 from frappe import _
 
-from ai_assistant.services import access, budget, settings
+from ai_assistant.services import access, agents, budget, settings
 
 
 def get() -> dict:
@@ -33,6 +33,7 @@ def get() -> dict:
 		"supports_images": bool(main and main.supports_images),
 		"supports_pdf": bool(main and main.supports_pdf),
 		"is_admin": access.is_admin(user),
+		"agents": agents.available(user),
 	}
 
 

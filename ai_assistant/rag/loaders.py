@@ -45,6 +45,8 @@ def knowledge_text(doc) -> str:
 	parts = [doc.title, strip_html(doc.content or "").strip()]
 	if doc.attachment:
 		parts.append(file_text(doc.attachment))
+	if doc.get("url_text"):
+		parts.append(f"Source: {doc.source_url}\n{doc.url_text}")
 	return "\n\n".join(p for p in parts if p)
 
 

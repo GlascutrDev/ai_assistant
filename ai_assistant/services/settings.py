@@ -26,7 +26,7 @@ DEFAULT_BLOCKED_DOCTYPES = (
 	"Scheduled Job Type",
 )
 
-DEFAULT_FILE_TYPES = "png jpg jpeg webp gif pdf docx xlsx csv txt md json mp3 m4a wav webm ogg"
+DEFAULT_FILE_TYPES = "png jpg jpeg webp gif pdf docx xlsx xls csv tsv txt md json mp3 m4a wav webm ogg"
 
 
 def get():

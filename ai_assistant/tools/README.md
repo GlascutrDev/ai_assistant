@@ -19,11 +19,16 @@ The agent's tools. Every tool runs as `frappe.session.user` and can never do mor
 | read | `list_documents`, `count_documents`, `aggregate`, `get_document`, `search_links`, `run_report` |
 | knowledge | `search_knowledge` |
 | files | `read_attachment`, `search_attachments` |
-| write | `create_document`, `update_document`, `submit_document`, `cancel_document`, `delete_document`, `add_comment`, `assign_to`, `apply_workflow_action`, `attach_file` |
+| spreadsheets | `inspect_spreadsheet`, `query_spreadsheet` (read); `write_spreadsheet` (write, confirmed; SPEC §6.8.1) |
+| write | `create_document`, `update_document`, `submit_document`, `cancel_document`, `delete_document`, `add_comment`, `assign_to`, `apply_workflow_action`, `attach_file`, `write_spreadsheet`, `create_documents`, `update_documents`, `delete_documents` (`bulk.py`), `send_email` (`mail.py`), `remember`, `forget_memory` (`memory.py`) |
 
-### Extension read tools
+`preview.spec_of(name)` gives the card spec (operation, doctype, `precheck`, `preview`, `own_guard`, `by_name`) of the core tools that build their own card (`write_spreadsheet`, the bulk tools, `send_email`, the memory tools) and of extension write tools. `files.file_content(file, runtime)` reads a chat attachment or a record `File` with the `read_attachment` checks.
 
-`extension_tools()` loads the LangChain tools named in the `ai_assistant_read_tools` hook of installed apps (SPEC §7.5). `for_turn()` offers them with the read tools, also in read-only mode. Bad paths, objects that are not tools and duplicate names are skipped and logged. Write tools cannot come from a hook.
+### Extension tools
+
+`extension_tools()` loads the LangChain tools named in the `ai_assistant_read_tools` hook of installed apps (SPEC §7.5). `for_turn()` offers them with the read tools, also in read-only mode. Bad paths, objects that are not tools and duplicate names are skipped and logged.
+
+`extension_write_tools()` loads the `ai_assistant_write_tools` hook. Each tool needs `metadata["ai_assistant"] = {"operation", "doctype", "precheck"?, "preview"?}`, or it is skipped and logged. `write_tool_names()` includes them, so they are interrupted for confirmation and removed in read-only mode. `write_spec(name)` returns the metadata. `preview.py` uses it for the card target, the pre-check (`guard.check` first) and the escaped `(headers, rows)` preview. `services.actions.operation_of(name)` gives the operation. `files.attachment_content(attachment, runtime)` gives an extension tool the bytes of the user's own chat attachment.
 
 ## Invariants
 
